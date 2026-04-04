@@ -26,6 +26,16 @@ interface ModePalette {
     orbThree: string;
 }
 
+interface TransactionSnapshot {
+    amount: string;
+    label: string;
+    categoryName: string;
+    categoryIcon: string;
+    date: string;
+    note: string;
+    type: TransactionType;
+}
+
 const CATEGORIES: Category[] = [
     { id: "food", name: "Alimentation", icon: "🍽️", color: "#FF453A", type: "expense" },
     { id: "transport", name: "Transport", icon: "🚇", color: "#0A84FF", type: "expense" },
@@ -71,8 +81,13 @@ export default function MobileFintechAdd() {
     const [amount, setAmount] = useState("");
     const [label, setLabel] = useState("");
     const [category, setCategory] = useState(DEFAULT_CATEGORY_ID);
+    const [date, setDate] = useState(getCurrentDate());
+    const [note, setNote] = useState("");
     const [showDetails, setShowDetails] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [savedTransaction, setSavedTransaction] = useState<TransactionSnapshot | null>(null);
+    const [cardTilt, setCardTilt] = useState({ rotateX: 0, rotateY: 0 });
+    const [isCapturingPreview, setIsCapturingPreview] = useState(false);
 
     const isExpense = type === "expense";
     const filteredCategories = CATEGORIES.filter((c) => c.type === type);
@@ -87,6 +102,14 @@ export default function MobileFintechAdd() {
             type,
         };
     const accentColor = selectedCategory?.color ?? palette.accent;
+    const amountValue = parseFloat(amount || "0");
+    const isSubmitDisabled = amountValue === 0 || !label.trim();
+    const formattedPreviewAmount = `${isExpense ? "-" : "+"} ${amountValue.toFixed(2)} €`;
+    const amountInteger = `${isExpense ? "-" : "+"}${Math.floor(amountValue).toString()}`;
+    const amountDecimals = amountValue.toFixed(2).split(".")[1] ?? "00";
+    const previewNarrative = isExpense
+        ? `Cette depense sera rangee dans ${selectedCategory.name || "une categorie"}`
+        : `Ce revenu sera ajoute a ${selectedCategory.name || "une categorie"}`;
 
     const formatAmount = (val: string) => {
         const cleaned = val.replace(/[^\d]/g, "");
@@ -99,12 +122,109 @@ export default function MobileFintechAdd() {
         setAmount(formatAmount(e.target.value));
     };
 
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (isSubmitDisabled) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        setIsCapturingPreview(true);
+        setCardTilt({ rotateX: 0, rotateY: 0 });
+
+        await new Promise((resolve) => setTimeout(resolve, 520));
+
+        setSavedTransaction({
+            amount: formattedPreviewAmount,
+            label: label.trim(),
+            categoryName: selectedCategory.name || "Categorie",
+            categoryIcon: selectedCategory.icon || "•",
+            date,
+            note: note.trim(),
+            type,
+        });
+        setIsSubmitting(false);
+        setIsCapturingPreview(false);
+    };
+
+    const handlePreviewMove = (event: React.MouseEvent<HTMLElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const offsetX = (event.clientX - rect.left) / rect.width - 0.5;
+        const offsetY = (event.clientY - rect.top) / rect.height - 0.5;
+
+        setCardTilt({
+            rotateX: offsetY * -8,
+            rotateY: offsetX * 10,
+        });
+    };
+
+    const resetPreviewTilt = () => {
+        setCardTilt({ rotateX: 0, rotateY: 0 });
+    };
+
     return (
         <div style={{ ...styles.container, background: palette.background }}>
             <div style={{ ...styles.orb, ...styles.orbPrimary, background: palette.orbOne }} />
             <div style={{ ...styles.orb, ...styles.orbSecondary, background: palette.orbTwo }} />
             <div style={{ ...styles.orb, ...styles.orbTertiary, background: palette.orbThree }} />
             <div style={{ ...styles.meshOverlay, background: `linear-gradient(180deg, ${palette.accentSoft}, rgba(255,255,255,0))` }} />
+
+            {savedTransaction ? (
+                <div style={styles.successOverlay}>
+                    <div style={{ ...styles.successPanel, boxShadow: palette.actionShadow }}>
+                        <div style={{ ...styles.successHalo, background: `radial-gradient(circle, ${palette.accentGlow} 0%, rgba(255,255,255,0) 70%)` }} />
+                        <div style={{ ...styles.successCheck, background: palette.toggleActive }}>✓</div>
+                        <p style={styles.successEyebrow}>Transaction enregistree</p>
+                        <div style={{ ...styles.previewCard, ...styles.previewCardSuccess, borderColor: `${accentColor}55` }}>
+                            <div style={styles.previewTopRow}>
+                                <div style={styles.previewBadge}>
+                                    <span style={{ ...styles.previewCategoryIcon, backgroundColor: `${accentColor}22`, color: accentColor }}>
+                                        {savedTransaction.categoryIcon}
+                                    </span>
+                                    <div>
+                                        <p style={styles.previewCategory}>{savedTransaction.categoryName}</p>
+                                        <p style={styles.previewMeta}>{savedTransaction.date}</p>
+                                    </div>
+                                </div>
+                                <p style={{ ...styles.previewAmount, color: accentColor }}>{savedTransaction.amount}</p>
+                            </div>
+                            <h3 style={styles.previewTitle}>{savedTransaction.label}</h3>
+                            <p style={styles.previewNarrative}>
+                                {savedTransaction.type === "expense"
+                                    ? "La depense a ete ajoutee a votre timeline budget."
+                                    : "Le revenu a ete ajoute a votre flux financier."}
+                            </p>
+                            {savedTransaction.note ? (
+                                <p style={styles.previewNote}>“{savedTransaction.note}”</p>
+                            ) : null}
+                        </div>
+                        <div style={styles.successActions}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSavedTransaction(null);
+                                    setAmount("");
+                                    setLabel("");
+                                    setNote("");
+                                    setDate(getCurrentDate());
+                                    setShowDetails(false);
+                                }}
+                                style={{ ...styles.successButton, ...styles.secondarySuccessButton }}
+                            >
+                                Ajouter une autre
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSavedTransaction(null)}
+                                style={{ ...styles.successButton, background: palette.toggleActive }}
+                            >
+                                Revenir au formulaire
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
             {/* --- STICKY HEADER: MONTANT --- */}
             <div style={{ ...styles.stickyHeader, borderBottomColor: `${accentColor}33` }}>
@@ -154,7 +274,7 @@ export default function MobileFintechAdd() {
             </div>
 
             {/* --- SCROLLABLE CONTENT --- */}
-            <form style={styles.scrollContent}>
+            <form id="transaction-form" style={styles.scrollContent} onSubmit={handleSubmit}>
                 <section style={styles.section}>
                     <p style={styles.sectionTitle}>Détails principaux</p>
                     <input
@@ -179,12 +299,87 @@ export default function MobileFintechAdd() {
                                     borderColor: category === cat.id ? cat.color : "rgba(255,255,255,0.08)",
                                     boxShadow: category === cat.id ? `0 16px 30px -18px ${cat.color}, inset 0 1px 0 rgba(255,255,255,0.18)` : "none",
                                     transform: category === cat.id ? "translateY(-1px)" : "translateY(0)",
+                                    animation: category === cat.id ? "chipPop 0.34s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
                                 }}
                             >
+                                {category === cat.id ? (
+                                    <span
+                                        style={{
+                                            ...styles.categoryRipple,
+                                            color: cat.color,
+                                        }}
+                                    />
+                                ) : null}
                                 <span style={styles.categoryIcon}>{cat.icon}</span>
                                 <span style={{ ...styles.categoryName, color: category === cat.id ? cat.color : "#fff" }}>{cat.name}</span>
                             </button>
                         ))}
+                    </div>
+                    <label style={styles.selectLabel}>
+                        Toutes les catégories
+                        <div style={styles.selectWrap}>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                style={{ ...styles.selectInput, borderColor: `${accentColor}33` }}
+                            >
+                                {filteredCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.icon} {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <span style={{ ...styles.selectChevron, color: accentColor }}>⌄</span>
+                        </div>
+                    </label>
+                </section>
+
+                <section
+                    style={{
+                        ...styles.section,
+                        ...styles.previewSection,
+                        borderColor: `${accentColor}44`,
+                        transform: `perspective(1200px) rotateX(${cardTilt.rotateX}deg) rotateY(${cardTilt.rotateY}deg) translateY(${isCapturingPreview ? "-20px" : "0px"}) scale(${isCapturingPreview ? 0.94 : 1})`,
+                        boxShadow: isCapturingPreview
+                            ? `0 42px 90px -42px ${palette.accentGlow}`
+                            : `0 24px 52px -28px ${palette.accentGlow}`,
+                        opacity: isCapturingPreview ? 0.35 : 1,
+                    }}
+                    onMouseMove={handlePreviewMove}
+                    onMouseLeave={resetPreviewTilt}
+                >
+                    <div
+                        style={{
+                            ...styles.previewReflection,
+                            background: `linear-gradient(120deg, rgba(255,255,255,0.22), rgba(255,255,255,0.02) 38%, transparent 62%)`,
+                            transform: `translateX(${cardTilt.rotateY * 2}px) translateY(${cardTilt.rotateX * -2}px)`,
+                        }}
+                    />
+                    <div style={styles.previewTopRow}>
+                        <div style={styles.previewBadge}>
+                            <span style={{ ...styles.previewCategoryIcon, backgroundColor: `${accentColor}22`, color: accentColor }}>
+                                {selectedCategory.icon || "•"}
+                            </span>
+                            <div>
+                                <p style={styles.previewCategory}>{selectedCategory.name || "Categorie"}</p>
+                                <p style={styles.previewMeta}>{date}</p>
+                            </div>
+                        </div>
+                        <div key={formattedPreviewAmount} style={styles.previewAmountWrap}>
+                            <p style={{ ...styles.previewAmountMajor, color: accentColor }}>{amountInteger}</p>
+                            <p style={{ ...styles.previewAmountMinor, color: accentColor }}>,{amountDecimals} €</p>
+                        </div>
+                    </div>
+                    <h2 style={styles.previewTitle}>{label.trim() || "Votre transaction apparaitra ici"}</h2>
+                    <p style={styles.previewNarrative}>{previewNarrative}</p>
+                    {note.trim() ? <p style={styles.previewNote}>“{note.trim()}”</p> : null}
+                    <div style={styles.previewFooter}>
+                        <span style={{ ...styles.previewPulse, backgroundColor: accentColor, color: accentColor }}>
+                            <span style={styles.previewPulseRing} />
+                        </span>
+                        <span style={styles.previewFooterText}>
+                            {isExpense ? "Effet immediat sur votre budget du mois" : "Le solde disponible augmentera instantanement"}
+                        </span>
                     </div>
                 </section>
 
@@ -200,9 +395,11 @@ export default function MobileFintechAdd() {
                 ) : (
                     <section style={styles.sectionAnimated}>
                         <p style={styles.sectionTitle}>Options avancées</p>
-                        <input type="date" style={styles.textInput} defaultValue={getCurrentDate()} />
+                        <input type="date" style={styles.textInput} value={date} onChange={(e) => setDate(e.target.value)} />
                         <textarea
                             placeholder="Notes additionnelles..."
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
                             style={{ ...styles.textInput, minHeight: 80, marginTop: 12 }}
                         />
                     </section>
@@ -214,15 +411,17 @@ export default function MobileFintechAdd() {
             {/* --- FIXED SUBMIT BUTTON --- */}
             <div style={styles.actionArea}>
                 <button
-                    disabled={parseFloat(amount) === 0 || !label}
+                    form="transaction-form"
+                    type="submit"
+                    disabled={isSubmitDisabled}
                     style={{
                         ...styles.submitButton,
                         background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
-                        opacity: (parseFloat(amount) === 0 || !label) ? 0.5 : 1,
+                        opacity: isSubmitDisabled ? 0.5 : 1,
                         boxShadow: palette.actionShadow,
                     }}
                 >
-                    Confirmer {isExpense ? "la dépense" : "le revenu"}
+                    {isSubmitting ? "Enregistrement..." : `Confirmer ${isExpense ? "la dépense" : "le revenu"}`}
                 </button>
             </div>
 
@@ -243,6 +442,45 @@ export default function MobileFintechAdd() {
                     0% { transform: translate3d(0, 0, 0) scale(1); }
                     50% { transform: translate3d(12px, -18px, 0) scale(1.04); }
                     100% { transform: translate3d(0, 0, 0) scale(1); }
+                }
+
+                @keyframes pulseRing {
+                    0% { transform: scale(0.92); opacity: 0.9; }
+                    70% { transform: scale(1.4); opacity: 0; }
+                    100% { transform: scale(1.4); opacity: 0; }
+                }
+
+                @keyframes successRise {
+                    0% { transform: translateY(34px) scale(0.88); opacity: 0; }
+                    55% { transform: translateY(-4px) scale(1.02); opacity: 1; }
+                    100% { transform: translateY(0) scale(1); opacity: 1; }
+                }
+
+                @keyframes shimmerSweep {
+                    0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+                    20% { opacity: 0.55; }
+                    100% { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+                }
+
+                @keyframes amountLift {
+                    0% { opacity: 0.7; transform: translateY(10px) scale(0.98); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+
+                @keyframes amountRoll {
+                    0% { opacity: 0; transform: translateY(16px) scale(0.96); filter: blur(6px); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+                }
+
+                @keyframes chipPop {
+                    0% { transform: scale(0.96); }
+                    55% { transform: scale(1.03); }
+                    100% { transform: scale(1); }
+                }
+
+                @keyframes rippleOut {
+                    0% { transform: scale(0.3); opacity: 0.38; }
+                    100% { transform: scale(1.7); opacity: 0; }
                 }
             `}</style>
         </div>
@@ -335,7 +573,7 @@ const styles: Record<string, CSSProperties> = {
         border: "none",
         fontSize: "13px",
         fontWeight: 600,
-        transition: "all 0.2s",
+        transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
         cursor: "pointer",
     },
     amountContainer: {
@@ -414,7 +652,21 @@ const styles: Record<string, CSSProperties> = {
         background: "rgba(8, 14, 29, 0.36)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
-        transition: "all 0.2s ease",
+        transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+        position: "relative",
+        overflow: "hidden",
+    },
+    categoryRipple: {
+        position: "absolute",
+        inset: "50% auto auto 50%",
+        width: "72px",
+        height: "72px",
+        borderRadius: "999px",
+        border: "1px solid currentColor",
+        transform: "translate(-50%, -50%)",
+        opacity: 0,
+        animation: "rippleOut 0.56s ease-out",
+        pointerEvents: "none",
     },
     categoryIcon: {
         fontSize: "20px",
@@ -422,6 +674,41 @@ const styles: Record<string, CSSProperties> = {
     categoryName: {
         fontSize: "14px",
         fontWeight: 600,
+    },
+    selectLabel: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        marginTop: "16px",
+        fontSize: "0.84rem",
+        color: "rgba(227, 236, 255, 0.74)",
+        letterSpacing: "0.02em",
+    },
+    selectWrap: {
+        position: "relative",
+    },
+    selectInput: {
+        width: "100%",
+        appearance: "none",
+        background: "rgba(8, 14, 29, 0.42)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "16px",
+        padding: "14px 44px 14px 16px",
+        color: "#f7fbff",
+        fontSize: "0.98rem",
+        outline: "none",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+    },
+    selectChevron: {
+        position: "absolute",
+        right: "16px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        pointerEvents: "none",
+        fontSize: "1.1rem",
+        fontWeight: 700,
     },
     expandButton: {
         background: "rgba(255,255,255,0.07)",
@@ -445,6 +732,126 @@ const styles: Record<string, CSSProperties> = {
         WebkitBackdropFilter: "blur(24px) saturate(160%)",
         boxShadow: "0 16px 40px rgba(3, 8, 20, 0.22)",
     },
+    previewSection: {
+        position: "relative",
+        overflow: "hidden",
+        transition: "transform 0.18s ease, box-shadow 0.24s ease",
+        transformStyle: "preserve-3d",
+    },
+    previewReflection: {
+        position: "absolute",
+        inset: "-20%",
+        opacity: 0.55,
+        pointerEvents: "none",
+        animation: "shimmerSweep 5.2s ease-in-out infinite",
+    },
+    previewCard: {
+        borderRadius: "24px",
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
+        padding: "18px",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+    },
+    previewCardSuccess: {
+        marginTop: "8px",
+    },
+    previewTopRow: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+    },
+    previewBadge: {
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+    },
+    previewCategoryIcon: {
+        width: "42px",
+        height: "42px",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "1.15rem",
+        fontWeight: 700,
+    },
+    previewCategory: {
+        margin: 0,
+        fontSize: "0.95rem",
+        fontWeight: 700,
+    },
+    previewMeta: {
+        margin: "2px 0 0",
+        fontSize: "0.8rem",
+        color: "rgba(227, 236, 255, 0.68)",
+    },
+    previewAmountWrap: {
+        display: "flex",
+        alignItems: "flex-end",
+        gap: "2px",
+        animation: "amountRoll 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+    },
+    previewAmountMajor: {
+        margin: 0,
+        fontSize: "1.55rem",
+        fontWeight: 800,
+        letterSpacing: "-0.05em",
+        lineHeight: 0.95,
+    },
+    previewAmountMinor: {
+        margin: "0 0 2px",
+        fontSize: "0.95rem",
+        fontWeight: 700,
+        letterSpacing: "-0.03em",
+    },
+    previewTitle: {
+        margin: "18px 0 8px",
+        fontSize: "1.35rem",
+        lineHeight: 1.1,
+        letterSpacing: "-0.04em",
+    },
+    previewNarrative: {
+        margin: 0,
+        color: "rgba(237, 243, 255, 0.8)",
+        lineHeight: 1.5,
+    },
+    previewNote: {
+        margin: "14px 0 0",
+        padding: "12px 14px",
+        borderRadius: "16px",
+        background: "rgba(255,255,255,0.07)",
+        color: "rgba(247, 251, 255, 0.9)",
+        fontStyle: "italic",
+    },
+    previewFooter: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        marginTop: "16px",
+    },
+    previewPulse: {
+        width: "10px",
+        height: "10px",
+        borderRadius: "999px",
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    previewPulseRing: {
+        position: "absolute",
+        inset: "-6px",
+        borderRadius: "999px",
+        border: "1px solid currentColor",
+        opacity: 0.75,
+        animation: "pulseRing 1.8s ease-out infinite",
+    },
+    previewFooterText: {
+        color: "rgba(227, 236, 255, 0.72)",
+        fontSize: "0.84rem",
+    },
     actionArea: {
         position: "fixed",
         bottom: "0",
@@ -466,5 +873,76 @@ const styles: Record<string, CSSProperties> = {
         fontWeight: 700,
         cursor: "pointer",
         transition: "all 0.25s ease",
+    },
+    successOverlay: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 30,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        background: "rgba(8, 12, 24, 0.52)",
+        backdropFilter: "blur(26px)",
+        WebkitBackdropFilter: "blur(26px)",
+    },
+    successPanel: {
+        position: "relative",
+        width: "min(460px, 100%)",
+        borderRadius: "28px",
+        padding: "24px",
+        background: "linear-gradient(180deg, rgba(16, 24, 43, 0.92) 0%, rgba(12, 18, 31, 0.96) 100%)",
+        border: "1px solid rgba(255,255,255,0.16)",
+        animation: "successRise 0.35s ease-out",
+        overflow: "hidden",
+    },
+    successHalo: {
+        position: "absolute",
+        inset: "-20%",
+        opacity: 0.55,
+        pointerEvents: "none",
+    },
+    successCheck: {
+        position: "relative",
+        zIndex: 1,
+        width: "58px",
+        height: "58px",
+        borderRadius: "999px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "1.4rem",
+        fontWeight: 800,
+        marginBottom: "16px",
+        boxShadow: "0 16px 36px rgba(0,0,0,0.28)",
+    },
+    successEyebrow: {
+        position: "relative",
+        zIndex: 1,
+        margin: "0 0 8px",
+        fontSize: "0.78rem",
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "rgba(227, 236, 255, 0.68)",
+    },
+    successActions: {
+        position: "relative",
+        zIndex: 1,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "12px",
+        marginTop: "18px",
+    },
+    successButton: {
+        border: "none",
+        borderRadius: "16px",
+        padding: "14px 16px",
+        color: "#fff",
+        fontWeight: 700,
+        cursor: "pointer",
+    },
+    secondarySuccessButton: {
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.14)",
     },
 };
