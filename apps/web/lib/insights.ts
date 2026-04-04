@@ -1,6 +1,7 @@
 import type {
   AssistantInsight,
   CategorySummary,
+  ComparisonSummary,
   ForecastSummary,
   InsightsSummary,
   PeriodSummary,
@@ -10,6 +11,7 @@ import type {
 export type {
   AssistantInsight,
   CategorySummary,
+  ComparisonSummary,
   ForecastSummary,
   InsightsSummary,
   PeriodSummary,
@@ -89,4 +91,28 @@ export function pressureLabel(pressure: CategorySummary["pressure"]) {
     default:
       return "Legere";
   }
+}
+
+export function deltaLabel(delta: ComparisonSummary["expenseDelta"]) {
+  if (delta.direction === "flat") {
+    return "Stable";
+  }
+
+  return `${delta.direction === "up" ? "+" : "-"} ${delta.value} €`;
+}
+
+export function comparisonNarrative(comparison: ComparisonSummary) {
+  if (comparison.expenseDelta.direction === "flat" && comparison.incomeDelta.direction === "flat") {
+    return `Votre rythme reste proche de ${comparison.previousMonth}.`;
+  }
+
+  if (comparison.expenseDelta.direction === "up") {
+    return `Vos depenses montent par rapport a ${comparison.previousMonth}, avec ${comparison.topRisingCategory ?? "une categorie dominante"} en premier signal.`;
+  }
+
+  if (comparison.expenseDelta.direction === "down") {
+    return `Vos depenses ralentissent par rapport a ${comparison.previousMonth}, surtout autour de ${comparison.topImprovementCategory ?? "vos categories principales"}.`;
+  }
+
+  return `Votre rythme evolue legerement par rapport a ${comparison.previousMonth}.`;
 }

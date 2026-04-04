@@ -49,8 +49,22 @@ export interface AssistantInsight {
   tone: InsightTone;
 }
 
+export interface ComparisonDelta {
+  direction: "down" | "flat" | "up";
+  value: number;
+}
+
+export interface ComparisonSummary {
+  expenseDelta: ComparisonDelta;
+  incomeDelta: ComparisonDelta;
+  previousMonth: string;
+  topImprovementCategory: string | null;
+  topRisingCategory: string | null;
+}
+
 export interface InsightsSummary {
   categories: CategorySummary[];
+  comparison: ComparisonSummary;
   forecast: ForecastSummary;
   insights: AssistantInsight[];
   period: PeriodSummary;
@@ -132,11 +146,114 @@ function buildCategorySummaries(transactions: InsightTransaction[]) {
     .slice(0, 3);
 }
 
+function buildCategoryMap(transactions: InsightTransaction[]) {
+  const categoryMap = new Map<string, number>();
+
+  for (const transaction of transactions) {
+    if (transaction.type !== "expense") {
+      continue;
+    }
+
+    const category = transaction.category ?? DEFAULT_CATEGORY;
+    categoryMap.set(category, (categoryMap.get(category) ?? 0) + transaction.amount);
+  }
+
+  return categoryMap;
+}
+
+function buildDelta(current: number, previous: number): ComparisonDelta {
+  const value = roundCurrency(current - previous);
+
+  if (value > 0) {
+    return { direction: "up", value };
+  }
+
+  if (value < 0) {
+    return { direction: "down", value: Math.abs(value) };
+  }
+
+  return { direction: "flat", value: 0 };
+}
+
+function getPreviousMonthLabel(now: Date) {
+  const previousMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+
+  return `${previousMonth.getUTCFullYear()}-${String(previousMonth.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildComparison(
+  currentTransactions: InsightTransaction[],
+  previousTransactions: InsightTransaction[],
+  now: Date,
+): ComparisonSummary {
+  const currentTotals = currentTransactions.reduce<TotalsSummary>((accumulator, transaction) => {
+    if (transaction.type === "income") {
+      accumulator.income += transaction.amount;
+    } else {
+      accumulator.expenses += transaction.amount;
+    }
+
+    return accumulator;
+  }, {
+    balance: 0,
+    expenses: 0,
+    income: 0,
+  });
+  const previousTotals = previousTransactions.reduce<TotalsSummary>((accumulator, transaction) => {
+    if (transaction.type === "income") {
+      accumulator.income += transaction.amount;
+    } else {
+      accumulator.expenses += transaction.amount;
+    }
+
+    return accumulator;
+  }, {
+    balance: 0,
+    expenses: 0,
+    income: 0,
+  });
+
+  const currentCategoryMap = buildCategoryMap(currentTransactions);
+  const previousCategoryMap = buildCategoryMap(previousTransactions);
+  const categories = new Set([
+    ...currentCategoryMap.keys(),
+    ...previousCategoryMap.keys(),
+  ]);
+
+  let topRisingCategory: string | null = null;
+  let topImprovementCategory: string | null = null;
+  let highestRise = 0;
+  let highestDrop = 0;
+
+  for (const category of categories) {
+    const delta = (currentCategoryMap.get(category) ?? 0) - (previousCategoryMap.get(category) ?? 0);
+
+    if (delta > highestRise) {
+      highestRise = delta;
+      topRisingCategory = category;
+    }
+
+    if (delta < highestDrop) {
+      highestDrop = delta;
+      topImprovementCategory = category;
+    }
+  }
+
+  return {
+    expenseDelta: buildDelta(currentTotals.expenses, previousTotals.expenses),
+    incomeDelta: buildDelta(currentTotals.income, previousTotals.income),
+    previousMonth: getPreviousMonthLabel(now),
+    topImprovementCategory,
+    topRisingCategory,
+  };
+}
+
 function buildInsights({
+  comparison,
   categories,
   forecast,
   totals,
-}: Pick<InsightsSummary, "categories" | "forecast" | "totals">): AssistantInsight[] {
+}: Pick<InsightsSummary, "categories" | "comparison" | "forecast" | "totals">): AssistantInsight[] {
   const insights: AssistantInsight[] = [];
 
   if (totals.income === 0 && totals.expenses === 0) {
@@ -182,6 +299,38 @@ function buildInsights({
     });
   }
 
+  if (comparison.expenseDelta.direction === "up") {
+    insights.push({
+      body: `Vos depenses progressent de ${comparison.expenseDelta.value} par rapport a ${comparison.previousMonth}.`,
+      id: "expense-delta-up",
+      title: "Depenses en hausse",
+      tone: comparison.expenseDelta.value >= 100 ? "warning" : "neutral",
+    });
+  } else if (comparison.expenseDelta.direction === "down") {
+    insights.push({
+      body: `Vos depenses reculent de ${comparison.expenseDelta.value} par rapport a ${comparison.previousMonth}.`,
+      id: "expense-delta-down",
+      title: "Depenses en recul",
+      tone: "positive",
+    });
+  }
+
+  if (comparison.topRisingCategory) {
+    insights.push({
+      body: `${comparison.topRisingCategory} est la categorie qui accelere le plus par rapport au mois precedent.`,
+      id: "top-rising-category",
+      title: "Categorie a surveiller",
+      tone: "warning",
+    });
+  } else if (comparison.topImprovementCategory) {
+    insights.push({
+      body: `${comparison.topImprovementCategory} est la categorie qui se calme le plus par rapport au mois precedent.`,
+      id: "top-improvement-category",
+      title: "Amelioration visible",
+      tone: "positive",
+    });
+  }
+
   if (forecast.averageDailyExpense > 0) {
     insights.push({
       body: `Vous depensez en moyenne ${roundCurrency(forecast.averageDailyExpense)} par jour sur la periode en cours.`,
@@ -195,12 +344,13 @@ function buildInsights({
 }
 
 export function buildMonthlyInsights(
-  transactions: InsightTransaction[],
+  currentTransactions: InsightTransaction[],
+  previousTransactions: InsightTransaction[] = [],
   now = new Date(),
 ): InsightsSummary {
   const period = getPeriod(now);
-  const hasTransactions = transactions.length > 0;
-  const totals = transactions.reduce<TotalsSummary>((accumulator, transaction) => {
+  const hasTransactions = currentTransactions.length > 0;
+  const totals = currentTransactions.reduce<TotalsSummary>((accumulator, transaction) => {
     if (transaction.type === "income") {
       accumulator.income += transaction.amount;
       accumulator.balance += transaction.amount;
@@ -230,12 +380,14 @@ export function buildMonthlyInsights(
     status: hasTransactions ? getForecastStatus(projectedEndBalance, totals.income) : "stable",
   };
 
-  const categories = buildCategorySummaries(transactions);
+  const categories = buildCategorySummaries(currentTransactions);
+  const comparison = buildComparison(currentTransactions, previousTransactions, now);
 
   return {
     categories,
+    comparison,
     forecast,
-    insights: buildInsights({ categories, forecast, totals }),
+    insights: buildInsights({ categories, comparison, forecast, totals }),
     period,
     totals,
   };

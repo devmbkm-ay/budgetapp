@@ -55,44 +55,87 @@ const listTransactions = mock(async (userEmail: string) => ([
   },
 ]));
 
-const listTransactionsByDateRange = mock(async (userEmail: string) => ([
-  {
-    amount: 1800,
-    category: "Salaire",
-    currency: "EUR",
-    date: "2026-04-02T12:00:00Z",
-    id: "tx_income",
-    label: "Salaire avril",
-    type: "income",
-    userEmail,
-    userId: "user_1",
-    userName: "Alice",
-  },
-  {
-    amount: 120,
-    category: "Alimentation",
-    currency: "EUR",
-    date: "2026-04-03T12:00:00Z",
-    id: "tx_food",
-    label: "Courses semaine",
-    type: "expense",
-    userEmail,
-    userId: "user_1",
-    userName: "Alice",
-  },
-  {
-    amount: 60,
-    category: "Loisirs",
-    currency: "EUR",
-    date: "2026-04-04T12:00:00Z",
-    id: "tx_fun",
-    label: "Concert",
-    type: "expense",
-    userEmail,
-    userId: "user_1",
-    userName: "Alice",
-  },
-]));
+const listTransactionsByDateRange = mock(async (userEmail: string, startDate: Date) => {
+  if (startDate.getUTCMonth() === 3) {
+    return [
+      {
+        amount: 1800,
+        category: "Salaire",
+        currency: "EUR",
+        date: "2026-04-02T12:00:00Z",
+        id: "tx_income",
+        label: "Salaire avril",
+        type: "income",
+        userEmail,
+        userId: "user_1",
+        userName: "Alice",
+      },
+      {
+        amount: 120,
+        category: "Alimentation",
+        currency: "EUR",
+        date: "2026-04-03T12:00:00Z",
+        id: "tx_food",
+        label: "Courses semaine",
+        type: "expense",
+        userEmail,
+        userId: "user_1",
+        userName: "Alice",
+      },
+      {
+        amount: 60,
+        category: "Loisirs",
+        currency: "EUR",
+        date: "2026-04-04T12:00:00Z",
+        id: "tx_fun",
+        label: "Concert",
+        type: "expense",
+        userEmail,
+        userId: "user_1",
+        userName: "Alice",
+      },
+    ];
+  }
+
+  return [
+    {
+      amount: 1750,
+      category: "Salaire",
+      currency: "EUR",
+      date: "2026-03-02T12:00:00Z",
+      id: "tx_income_prev",
+      label: "Salaire mars",
+      type: "income",
+      userEmail,
+      userId: "user_1",
+      userName: "Alice",
+    },
+    {
+      amount: 80,
+      category: "Alimentation",
+      currency: "EUR",
+      date: "2026-03-05T12:00:00Z",
+      id: "tx_food_prev",
+      label: "Courses mars",
+      type: "expense",
+      userEmail,
+      userId: "user_1",
+      userName: "Alice",
+    },
+    {
+      amount: 95,
+      category: "Transport",
+      currency: "EUR",
+      date: "2026-03-08T12:00:00Z",
+      id: "tx_transport_prev",
+      label: "Navigo",
+      type: "expense",
+      userEmail,
+      userId: "user_1",
+      userName: "Alice",
+    },
+  ];
+});
 
 const updateTransaction = mock(async (input: { transactionId: string; userEmail: string }) => ({
   amount: 99.5,
@@ -165,17 +208,37 @@ describe("budgetRoute", () => {
     );
     const payload = await response.json() as {
       categories: Array<{ category: string }>;
+      comparison: {
+        expenseDelta: { direction: string; value: number };
+        incomeDelta: { direction: string; value: number };
+        previousMonth: string;
+        topImprovementCategory: string | null;
+        topRisingCategory: string | null;
+      };
       forecast: { status: string };
       insights: Array<{ id: string }>;
       totals: { balance: number; expenses: number; income: number };
     };
 
     expect(response.status).toBe(200);
-    expect(listTransactionsByDateRange).toHaveBeenCalledTimes(1);
+    expect(listTransactionsByDateRange).toHaveBeenCalledTimes(2);
     expect(payload.totals).toEqual({
       balance: 1620,
       expenses: 180,
       income: 1800,
+    });
+    expect(payload.comparison).toEqual({
+      expenseDelta: {
+        direction: "up",
+        value: 5,
+      },
+      incomeDelta: {
+        direction: "up",
+        value: 50,
+      },
+      previousMonth: "2026-03",
+      topImprovementCategory: "Transport",
+      topRisingCategory: "Loisirs",
     });
     expect(["stable", "watch"]).toContain(payload.forecast.status);
     expect(payload.categories[0]?.category).toBe("Alimentation");
@@ -272,6 +335,13 @@ describe("budgetRoute", () => {
     );
     const payload = await response.json() as {
       categories: unknown[];
+      comparison: {
+        expenseDelta: { direction: string; value: number };
+        incomeDelta: { direction: string; value: number };
+        previousMonth: string;
+        topImprovementCategory: string | null;
+        topRisingCategory: string | null;
+      };
       forecast: { status: string };
       insights: Array<{ id: string }>;
       totals: { balance: number; expenses: number; income: number };
@@ -284,6 +354,7 @@ describe("budgetRoute", () => {
       income: 0,
     });
     expect(payload.categories).toEqual([]);
+    expect(payload.comparison.previousMonth).toBe("2026-03");
     expect(payload.forecast.status).toBe("stable");
     expect(payload.insights[0]?.id).toBe("empty-month");
   });

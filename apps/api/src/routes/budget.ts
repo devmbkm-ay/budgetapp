@@ -9,6 +9,13 @@ function getCurrentMonthRange(now = new Date()) {
     return { endDate, startDate };
 }
 
+function getPreviousMonthRange(now = new Date()) {
+    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+    return { endDate, startDate };
+}
+
 export const budgetRoute = new Elysia()
     .onAfterHandle(({ set }) => {
         set.headers["Access-Control-Allow-Origin"] = "*";
@@ -44,10 +51,14 @@ export const budgetRoute = new Elysia()
         }),
     })
     .get("/insights/summary", async ({ query }) => {
-        const { endDate, startDate } = getCurrentMonthRange();
-        const transactions = await listTransactionsByDateRange(query.userEmail, startDate, endDate);
+        const currentMonth = getCurrentMonthRange();
+        const previousMonth = getPreviousMonthRange();
+        const [currentTransactions, previousTransactions] = await Promise.all([
+            listTransactionsByDateRange(query.userEmail, currentMonth.startDate, currentMonth.endDate),
+            listTransactionsByDateRange(query.userEmail, previousMonth.startDate, previousMonth.endDate),
+        ]);
 
-        return buildMonthlyInsights(transactions);
+        return buildMonthlyInsights(currentTransactions, previousTransactions);
     }, {
         query: t.Object({
             userEmail: t.String(),

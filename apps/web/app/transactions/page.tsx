@@ -8,6 +8,7 @@ import { CategoryPressureCard } from "../_components/category-pressure-card";
 import { ConfirmDialog } from "../_components/confirm-dialog";
 import { ForecastCard } from "../_components/forecast-card";
 import { MoneyPulseCard } from "../_components/money-pulse-card";
+import { MonthComparisonCard } from "../_components/month-comparison-card";
 import { forecastStatusCopy, forecastStatusLabel, forecastStatusTheme, type InsightsSummary } from "../../lib/insights";
 import {
   categoryEmoji,
@@ -293,6 +294,7 @@ export default function TransactionsPage() {
               <div style={styles.insightsGrid}>
                 <MoneyPulseCard totals={insights.totals} status={insights.forecast.status} />
                 <ForecastCard forecast={insights.forecast} period={insights.period} />
+                <MonthComparisonCard comparison={insights.comparison} status={insights.forecast.status} />
                 <CategoryPressureCard categories={insights.categories} status={insights.forecast.status} />
               </div>
               <AssistantFeed insights={insights.insights} status={insights.forecast.status} />
