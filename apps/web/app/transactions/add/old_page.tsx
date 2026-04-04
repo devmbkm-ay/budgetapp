@@ -17,9 +17,9 @@ export default function AddTransactionPage() {
   };
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      backgroundColor: "#F6F6F6", 
+    <div style={{
+      minHeight: "100vh",
+      backgroundColor: "#F6F6F6",
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       padding: "1rem"
     }}>
@@ -31,14 +31,14 @@ export default function AddTransactionPage() {
         </div>
 
         {/* Card Principal */}
-        <div style={{ 
-          backgroundColor: "#FFFFFF", 
-          borderRadius: "16px", 
-          padding: "1.5rem", 
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)" 
+        <div style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          padding: "1.5rem",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
         }}>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            
+
             {/* Montant - Focus Style */}
             <div style={{ textAlign: "center", marginBottom: "1rem" }}>
               <span style={{ fontSize: "0.875rem", color: "#6B6B6B", display: "block", marginBottom: "0.5rem" }}>Montant</span>
@@ -51,11 +51,11 @@ export default function AddTransactionPage() {
                   placeholder="0.00"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  style={{ 
-                    fontSize: "2.5rem", 
-                    fontWeight: "700", 
-                    border: "none", 
-                    outline: "none", 
+                  style={{
+                    fontSize: "2.5rem",
+                    fontWeight: "700",
+                    border: "none",
+                    outline: "none",
                     textAlign: "center",
                     width: "200px",
                     color: "#000"
@@ -74,11 +74,11 @@ export default function AddTransactionPage() {
                   placeholder="Où avez-vous dépensé ?"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  style={{ 
-                    width: "100%", 
-                    padding: "0.75rem 0", 
-                    border: "none", 
-                    borderBottom: "1px solid #E5E5E5", 
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 0",
+                    border: "none",
+                    borderBottom: "1px solid #E5E5E5",
                     fontSize: "1rem",
                     outline: "none"
                   }}
@@ -90,11 +90,11 @@ export default function AddTransactionPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  style={{ 
-                    width: "100%", 
-                    padding: "0.75rem 0", 
-                    border: "none", 
-                    borderBottom: "1px solid #E5E5E5", 
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 0",
+                    border: "none",
+                    borderBottom: "1px solid #E5E5E5",
                     fontSize: "1rem",
                     backgroundColor: "transparent",
                     outline: "none",
