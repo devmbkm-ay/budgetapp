@@ -514,7 +514,7 @@ export default function MobileFintechAdd() {
                 </div>
             ) : null}
 
-            <style jsx>{`
+            <style>{`
                 @keyframes floatOne {
                     0% { transform: translate3d(0, 0, 0) scale(1); }
                     50% { transform: translate3d(24px, 18px, 0) scale(1.08); }

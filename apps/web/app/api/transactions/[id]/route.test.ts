@@ -13,10 +13,18 @@ async function createAuthenticatedRequest(url: string, init?: RequestInit) {
   const token = await createSessionToken(sessionUser);
   const headers = new Headers(init?.headers);
   headers.set("cookie", `${SESSION_COOKIE_NAME}=${token}`);
-  const { headers: _headers, signal: _signal, ...rest } = init ?? {};
 
   return new NextRequest(url, {
-    ...rest,
+    method: init?.method,
+    body: init?.body,
+    cache: init?.cache,
+    credentials: init?.credentials,
+    integrity: init?.integrity,
+    keepalive: init?.keepalive,
+    mode: init?.mode,
+    redirect: init?.redirect,
+    referrer: init?.referrer,
+    referrerPolicy: init?.referrerPolicy,
     headers,
   });
 }
