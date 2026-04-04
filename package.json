@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "bun run dev:full",
     "dev:app": "turbo run dev --filter=api --filter=web",
     "dev:full": "bun run scripts/dev-full.ts",
     "lint": "turbo run lint",

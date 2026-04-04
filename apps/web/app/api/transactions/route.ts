@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     console.error("Failed to load transactions from API:", error);
 
     return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `apps/api` sur le port 3001." },
+      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
       { status: 502 },
     );
   }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     console.error("Failed to create transaction through API:", error);
 
     return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `apps/api` sur le port 3001." },
+      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
       { status: 502 },
     );
   }
