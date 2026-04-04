@@ -88,6 +88,7 @@ export default function MobileFintechAdd() {
     const [savedTransaction, setSavedTransaction] = useState<TransactionSnapshot | null>(null);
     const [cardTilt, setCardTilt] = useState({ rotateX: 0, rotateY: 0 });
     const [isCapturingPreview, setIsCapturingPreview] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const isExpense = type === "expense";
     const filteredCategories = CATEGORIES.filter((c) => c.type === type);
@@ -132,20 +133,60 @@ export default function MobileFintechAdd() {
         setIsSubmitting(true);
         setIsCapturingPreview(true);
         setCardTilt({ rotateX: 0, rotateY: 0 });
+        setSubmitError(null);
 
-        await new Promise((resolve) => setTimeout(resolve, 520));
+        try {
+            const response = await fetch("/api/transactions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    amount: amountValue,
+                    category: selectedCategory.name || null,
+                    currency: "EUR",
+                    date,
+                    label: label.trim(),
+                    note: note.trim() || undefined,
+                    type,
+                    userEmail: "ricardo@test.com",
+                    userName: "Ricardo",
+                }),
+            });
 
-        setSavedTransaction({
-            amount: formattedPreviewAmount,
-            label: label.trim(),
-            categoryName: selectedCategory.name || "Categorie",
-            categoryIcon: selectedCategory.icon || "•",
-            date,
-            note: note.trim(),
-            type,
-        });
-        setIsSubmitting(false);
-        setIsCapturingPreview(false);
+            if (!response.ok) {
+                const errorPayload = await response.json().catch(() => null) as { error?: string } | null;
+                throw new Error(errorPayload?.error ?? "Impossible d'enregistrer la transaction.");
+            }
+
+            const payload = await response.json() as {
+                data?: {
+                    amount: number;
+                    category: string | null;
+                    date: string;
+                    label: string;
+                    type: TransactionType;
+                };
+            };
+
+            await new Promise((resolve) => setTimeout(resolve, 320));
+
+            setSavedTransaction({
+                amount: `${payload.data?.type === "income" ? "+" : "-"} ${(payload.data?.amount ?? amountValue).toFixed(2)} €`,
+                label: payload.data?.label ?? label.trim(),
+                categoryName: payload.data?.category ?? selectedCategory.name ?? "Categorie",
+                categoryIcon: selectedCategory.icon || "•",
+                date: payload.data?.date?.slice(0, 10) ?? date,
+                note: note.trim(),
+                type: payload.data?.type ?? type,
+            });
+        } catch (error) {
+            console.error(error);
+            setSubmitError(error instanceof Error ? error.message : "Connexion a l'API impossible.");
+        } finally {
+            setIsSubmitting(false);
+            setIsCapturingPreview(false);
+        }
     };
 
     const handlePreviewMove = (event: React.MouseEvent<HTMLElement>) => {
@@ -170,6 +211,13 @@ export default function MobileFintechAdd() {
             <div style={{ ...styles.orb, ...styles.orbTertiary, background: palette.orbThree }} />
             <div style={{ ...styles.meshOverlay, background: `linear-gradient(180deg, ${palette.accentSoft}, rgba(255,255,255,0))` }} />
 
+            {submitError ? (
+                <div style={styles.errorBanner}>
+                    <strong style={styles.errorTitle}>Enregistrement indisponible</strong>
+                    <span>{submitError}</span>
+                </div>
+            ) : null}
+
             {savedTransaction ? (
                 <div style={styles.successOverlay}>
                     <div style={{ ...styles.successPanel, boxShadow: palette.actionShadow }}>
@@ -187,7 +235,7 @@ export default function MobileFintechAdd() {
                                         <p style={styles.previewMeta}>{savedTransaction.date}</p>
                                     </div>
                                 </div>
-                                <p style={{ ...styles.previewAmount, color: accentColor }}>{savedTransaction.amount}</p>
+                                <p style={{ ...styles.previewAmountMajor, color: accentColor }}>{savedTransaction.amount}</p>
                             </div>
                             <h3 style={styles.previewTitle}>{savedTransaction.label}</h3>
                             <p style={styles.previewNarrative}>
@@ -209,6 +257,7 @@ export default function MobileFintechAdd() {
                                     setNote("");
                                     setDate(getCurrentDate());
                                     setShowDetails(false);
+                                    setSubmitError(null);
                                 }}
                                 style={{ ...styles.successButton, ...styles.secondarySuccessButton }}
                             >
@@ -531,6 +580,25 @@ const styles: Record<string, CSSProperties> = {
         pointerEvents: "none",
         opacity: 0.3,
         zIndex: 0,
+    },
+    errorBanner: {
+        position: "relative",
+        zIndex: 16,
+        margin: "16px 20px 0",
+        padding: "14px 16px",
+        borderRadius: "18px",
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: "rgba(119, 24, 31, 0.42)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        display: "grid",
+        gap: "4px",
+        color: "#ffe7e8",
+        boxShadow: "0 18px 32px rgba(23, 8, 12, 0.24)",
+    },
+    errorTitle: {
+        fontSize: "0.92rem",
+        letterSpacing: "0.02em",
     },
     stickyHeader: {
         position: "sticky",

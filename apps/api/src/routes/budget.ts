@@ -1,23 +1,41 @@
 import { Elysia, t } from "elysia";
+import { createTransaction, listTransactions } from "../../../../packages/database/index.ts";
 
 export const budgetRoute = new Elysia()
-    .get("/budget", () => {
-        return [
-            { id: 1, label: "Courses", amount: 150, currency: "EUR" },
-            { id: 2, label: "Books", amount: 50, currency: "EUR" },
-            { id: 3, label: "Software", amount: 100, currency: "EUR" }
-        ]
+    .onAfterHandle(({ set }) => {
+        set.headers["Access-Control-Allow-Origin"] = "*";
+        set.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+        set.headers["Access-Control-Allow-Headers"] = "Content-Type";
     })
-    .post("/transaction", ({ body }) => {
+    .options("/transactions", ({ set }) => {
+        set.status = 204;
+        return "";
+    })
+    .get("/budget", async () => {
+        return listTransactions();
+    })
+    .get("/transactions", async () => {
+        return listTransactions();
+    })
+    .post("/transactions", async ({ body, set }) => {
+        const transaction = await createTransaction(body);
+
+        set.status = 201;
+
         return {
-            message: "Transaction ajoutée",
-            data: body
-        }
+            message: "Transaction ajoutee",
+            data: transaction,
+        };
     }, {
         body: t.Object({
-            label: t.String(),
             amount: t.Number(),
-            currency: t.String(),
-            category: t.Optional(t.String())
+            category: t.Optional(t.String()),
+            currency: t.Optional(t.String()),
+            date: t.String(),
+            label: t.String(),
+            note: t.Optional(t.String()),
+            type: t.Union([t.Literal("expense"), t.Literal("income")]),
+            userEmail: t.String(),
+            userName: t.Optional(t.String()),
         })
-    })
+    });
