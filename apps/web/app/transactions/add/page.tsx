@@ -20,6 +20,10 @@ interface ModePalette {
     toggleActive: string;
     textShadow: string;
     actionShadow: string;
+    background: string;
+    orbOne: string;
+    orbTwo: string;
+    orbThree: string;
 }
 
 const CATEGORIES: Category[] = [
@@ -42,6 +46,10 @@ const PALETTES: Record<TransactionType, ModePalette> = {
         toggleActive: "linear-gradient(135deg, rgba(255, 69, 58, 0.95), rgba(255, 110, 98, 0.82))",
         textShadow: "0 8px 28px rgba(255, 69, 58, 0.22), 0 4px 18px rgba(10, 132, 255, 0.16)",
         actionShadow: "0 20px 36px rgba(255, 69, 58, 0.28), 0 10px 30px rgba(10, 132, 255, 0.18)",
+        background: "radial-gradient(circle at 18% 16%, rgba(10, 132, 255, 0.34), transparent 26%), radial-gradient(circle at 84% 18%, rgba(255, 69, 58, 0.28), transparent 24%), linear-gradient(145deg, #08101e 0%, #101a34 44%, #2a1124 100%)",
+        orbOne: "rgba(10, 132, 255, 0.42)",
+        orbTwo: "rgba(255, 69, 58, 0.34)",
+        orbThree: "rgba(191, 90, 242, 0.22)",
     },
     income: {
         accent: "#32D74B",
@@ -51,6 +59,10 @@ const PALETTES: Record<TransactionType, ModePalette> = {
         toggleActive: "linear-gradient(135deg, rgba(50, 215, 75, 0.92), rgba(100, 210, 255, 0.78))",
         textShadow: "0 8px 28px rgba(50, 215, 75, 0.2), 0 4px 18px rgba(100, 210, 255, 0.18)",
         actionShadow: "0 20px 36px rgba(50, 215, 75, 0.24), 0 10px 30px rgba(100, 210, 255, 0.22)",
+        background: "radial-gradient(circle at 14% 18%, rgba(50, 215, 75, 0.28), transparent 24%), radial-gradient(circle at 82% 14%, rgba(100, 210, 255, 0.26), transparent 24%), linear-gradient(145deg, #07141b 0%, #10212b 40%, #0e2d26 100%)",
+        orbOne: "rgba(50, 215, 75, 0.34)",
+        orbTwo: "rgba(100, 210, 255, 0.32)",
+        orbThree: "rgba(10, 132, 255, 0.18)",
     },
 };
 
@@ -64,8 +76,16 @@ export default function MobileFintechAdd() {
 
     const isExpense = type === "expense";
     const filteredCategories = CATEGORIES.filter((c) => c.type === type);
-    const selectedCategory = filteredCategories.find((c) => c.id === category) ?? filteredCategories[0];
     const palette = PALETTES[type];
+    const selectedCategory =
+        filteredCategories.find((c) => c.id === category) ??
+        filteredCategories[0] ?? {
+            id: "",
+            name: "",
+            icon: "",
+            color: palette.accent,
+            type,
+        };
     const accentColor = selectedCategory?.color ?? palette.accent;
 
     const formatAmount = (val: string) => {
@@ -80,7 +100,12 @@ export default function MobileFintechAdd() {
     };
 
     return (
-        <div style={styles.container}>
+        <div style={{ ...styles.container, background: palette.background }}>
+            <div style={{ ...styles.orb, ...styles.orbPrimary, background: palette.orbOne }} />
+            <div style={{ ...styles.orb, ...styles.orbSecondary, background: palette.orbTwo }} />
+            <div style={{ ...styles.orb, ...styles.orbTertiary, background: palette.orbThree }} />
+            <div style={{ ...styles.meshOverlay, background: `linear-gradient(180deg, ${palette.accentSoft}, rgba(255,255,255,0))` }} />
+
             {/* --- STICKY HEADER: MONTANT --- */}
             <div style={{ ...styles.stickyHeader, borderBottomColor: `${accentColor}33` }}>
                 <div style={styles.headerTop}>
@@ -200,19 +225,74 @@ export default function MobileFintechAdd() {
                     Confirmer {isExpense ? "la dépense" : "le revenu"}
                 </button>
             </div>
+
+            <style jsx>{`
+                @keyframes floatOne {
+                    0% { transform: translate3d(0, 0, 0) scale(1); }
+                    50% { transform: translate3d(24px, 18px, 0) scale(1.08); }
+                    100% { transform: translate3d(0, 0, 0) scale(1); }
+                }
+
+                @keyframes floatTwo {
+                    0% { transform: translate3d(0, 0, 0) scale(1); }
+                    50% { transform: translate3d(-26px, 22px, 0) scale(0.94); }
+                    100% { transform: translate3d(0, 0, 0) scale(1); }
+                }
+
+                @keyframes floatThree {
+                    0% { transform: translate3d(0, 0, 0) scale(1); }
+                    50% { transform: translate3d(12px, -18px, 0) scale(1.04); }
+                    100% { transform: translate3d(0, 0, 0) scale(1); }
+                }
+            `}</style>
         </div>
     );
 }
 
 const styles: Record<string, CSSProperties> = {
     container: {
-        background: "radial-gradient(circle at top left, rgba(41, 121, 255, 0.35), transparent 32%), radial-gradient(circle at 85% 20%, rgba(255, 69, 58, 0.3), transparent 28%), linear-gradient(145deg, #09111f 0%, #101a34 45%, #2a1124 100%)",
         color: "#f7fbff",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         position: "relative",
         overflow: "hidden",
+    },
+    orb: {
+        position: "fixed",
+        borderRadius: "999px",
+        filter: "blur(42px)",
+        pointerEvents: "none",
+        opacity: 0.88,
+        zIndex: 0,
+    },
+    orbPrimary: {
+        width: "15rem",
+        height: "15rem",
+        top: "4.5rem",
+        left: "-3rem",
+        animation: "floatOne 12s ease-in-out infinite",
+    },
+    orbSecondary: {
+        width: "18rem",
+        height: "18rem",
+        top: "22rem",
+        right: "-5rem",
+        animation: "floatTwo 15s ease-in-out infinite",
+    },
+    orbTertiary: {
+        width: "12rem",
+        height: "12rem",
+        bottom: "8rem",
+        left: "35%",
+        animation: "floatThree 13s ease-in-out infinite",
+    },
+    meshOverlay: {
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        opacity: 0.3,
+        zIndex: 0,
     },
     stickyHeader: {
         position: "sticky",
@@ -281,6 +361,8 @@ const styles: Record<string, CSSProperties> = {
     scrollContent: {
         padding: "24px 20px",
         flex: 1,
+        position: "relative",
+        zIndex: 1,
     },
     section: {
         marginBottom: "32px",
@@ -372,6 +454,7 @@ const styles: Record<string, CSSProperties> = {
         background: "linear-gradient(180deg, rgba(9, 17, 31, 0) 0%, rgba(9, 17, 31, 0.82) 34%, rgba(9, 17, 31, 0.94) 100%)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
+        zIndex: 12,
     },
     submitButton: {
         width: "100%",
