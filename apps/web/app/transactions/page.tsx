@@ -278,6 +278,12 @@ export default function TransactionsPage() {
                       <span style={styles.transactionDay}>{formatShortDate(transaction.date)}</span>
                       <div style={styles.transactionActions}>
                         <Link
+                          href={`/transactions/${transaction.id}`}
+                          style={styles.viewButton}
+                        >
+                          Voir
+                        </Link>
+                        <Link
                           href={`/transactions/${transaction.id}/edit`}
                           style={styles.editButton}
                         >
@@ -559,6 +565,16 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(100, 210, 255, 0.28)",
     background: "rgba(100, 210, 255, 0.08)",
     color: "#bde8ff",
+    fontSize: "0.76rem",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  viewButton: {
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#f6fbff",
     fontSize: "0.76rem",
     fontWeight: 700,
     textDecoration: "none",
