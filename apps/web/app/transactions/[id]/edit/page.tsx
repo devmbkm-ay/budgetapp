@@ -237,7 +237,7 @@ export default function EditTransactionPage() {
       setSubmitError(null);
 
       const response = await fetch(
-        `/api/transactions?id=${encodeURIComponent(transactionId)}`,
+        `/api/transactions/${encodeURIComponent(transactionId)}`,
         {
           method: "PATCH",
           headers: {
