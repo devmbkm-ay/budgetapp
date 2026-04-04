@@ -8,7 +8,7 @@ import { CategoryPressureCard } from "../_components/category-pressure-card";
 import { ConfirmDialog } from "../_components/confirm-dialog";
 import { ForecastCard } from "../_components/forecast-card";
 import { MoneyPulseCard } from "../_components/money-pulse-card";
-import { forecastStatusLabel, forecastStatusTheme, type InsightsSummary } from "../../lib/insights";
+import { forecastStatusCopy, forecastStatusLabel, forecastStatusTheme, type InsightsSummary } from "../../lib/insights";
 import {
   categoryEmoji,
   DEFAULT_TRANSACTION_CATEGORY_LABEL,
@@ -142,6 +142,7 @@ export default function TransactionsPage() {
   const balance = insights?.totals.balance ?? (timelineTotals.income - timelineTotals.expense);
   const incomeTotal = insights?.totals.income ?? timelineTotals.income;
   const expenseTotal = insights?.totals.expenses ?? timelineTotals.expense;
+  const insightsCopy = insights ? forecastStatusCopy(insights.forecast.status) : null;
   const insightsTheme = insights ? forecastStatusTheme(insights.forecast.status) : null;
 
   const handleDelete = async (transactionId: string) => {
@@ -253,6 +254,9 @@ export default function TransactionsPage() {
             <div>
               <p style={styles.cardLabel}>Assistant</p>
               <h2 style={styles.listTitle}>Money Pulse</h2>
+              {insightsCopy ? (
+                <p style={styles.insightsSubtitle}>{insightsCopy.sectionSubtitle}</p>
+              ) : null}
             </div>
             <div style={styles.insightsBadges}>
               {insights?.period ? (
@@ -566,6 +570,12 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "8px 0 0",
     fontSize: "1.6rem",
     letterSpacing: "-0.04em",
+  },
+  insightsSubtitle: {
+    margin: "10px 0 0",
+    maxWidth: "38rem",
+    color: "rgba(227, 236, 255, 0.72)",
+    lineHeight: 1.6,
   },
   countPill: {
     padding: "10px 14px",

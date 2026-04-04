@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { forecastStatusTheme, type ForecastSummary, type TotalsSummary } from "../../lib/insights";
+import { forecastStatusCopy, forecastStatusTheme, type ForecastSummary, type TotalsSummary } from "../../lib/insights";
 import { formatCurrency } from "../../lib/transactions";
 
 interface MoneyPulseCardProps {
@@ -11,6 +11,7 @@ interface MoneyPulseCardProps {
 
 export function MoneyPulseCard({ status, totals }: MoneyPulseCardProps) {
   const balancePrefix = totals.balance >= 0 ? "+" : "-";
+  const copy = forecastStatusCopy(status);
   const theme = forecastStatusTheme(status);
 
   return (
@@ -23,7 +24,7 @@ export function MoneyPulseCard({ status, totals }: MoneyPulseCardProps) {
       <p style={styles.eyebrow}>Money Pulse</p>
       <h2 style={styles.title}>Vue instantanee</h2>
       <p style={styles.lead}>
-        Votre activite du mois en cours, calculee a partir des mouvements deja enregistres.
+        {copy.pulseLead}
       </p>
       <div style={styles.grid}>
         <div>

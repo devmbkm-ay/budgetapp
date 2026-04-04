@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { forecastStatusLabel, forecastStatusTheme, type ForecastSummary, type PeriodSummary } from "../../lib/insights";
+import { forecastStatusCopy, forecastStatusLabel, forecastStatusTheme, type ForecastSummary, type PeriodSummary } from "../../lib/insights";
 import { formatCurrency } from "../../lib/transactions";
 
 interface ForecastCardProps {
@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<ForecastSummary["status"], string> = {
 
 export function ForecastCard({ forecast, period }: ForecastCardProps) {
   const accent = STATUS_COLORS[forecast.status];
+  const copy = forecastStatusCopy(forecast.status);
   const theme = forecastStatusTheme(forecast.status);
   const prefix = forecast.projectedEndBalance >= 0 ? "+" : "-";
 
@@ -40,8 +41,10 @@ export function ForecastCard({ forecast, period }: ForecastCardProps) {
         {prefix} {formatCurrency(Math.abs(forecast.projectedEndBalance), "EUR")}
       </strong>
       <p style={styles.body}>
-        Projection basee sur {period.daysElapsed} jours ecoules et un rythme moyen de{" "}
-        {formatCurrency(forecast.averageDailyExpense, "EUR")} par jour.
+        {copy.forecastLead}
+      </p>
+      <p style={styles.secondary}>
+        Base de calcul: {period.daysElapsed} jours observes, soit {formatCurrency(forecast.averageDailyExpense, "EUR")} par jour en moyenne.
       </p>
       <p style={styles.secondary}>
         Depenses projetees sur {period.totalDays} jours: {formatCurrency(forecast.projectedMonthExpense, "EUR")}

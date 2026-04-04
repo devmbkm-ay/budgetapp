@@ -57,6 +57,29 @@ export function forecastStatusLabel(status: ForecastSummary["status"]) {
   }
 }
 
+export function forecastStatusCopy(status: ForecastSummary["status"]) {
+  switch (status) {
+    case "risky":
+      return {
+        forecastLead: "Le rythme actuel indique une fin de mois fragile si rien ne change.",
+        pulseLead: "Votre activite du mois signale une tension reelle sur votre marge de fin de mois.",
+        sectionSubtitle: "Votre assistant detecte une trajectoire qui merite une action rapide.",
+      };
+    case "watch":
+      return {
+        forecastLead: "La trajectoire reste positive, mais la marge de securite commence a se reduire.",
+        pulseLead: "Votre activite du mois reste maitrisable, avec quelques signaux a surveiller.",
+        sectionSubtitle: "Votre assistant voit une situation saine mais a surveiller de pres.",
+      };
+    default:
+      return {
+        forecastLead: "Le rythme actuel reste compatible avec une fin de mois encore confortable.",
+        pulseLead: "Votre activite du mois reste lisible et globalement bien contenue a ce stade.",
+        sectionSubtitle: "Votre assistant voit une dynamique stable et bien orientee pour le moment.",
+      };
+  }
+}
+
 export function pressureLabel(pressure: CategorySummary["pressure"]) {
   switch (pressure) {
     case "high":

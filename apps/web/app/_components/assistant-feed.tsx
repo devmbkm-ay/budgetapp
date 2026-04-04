@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { forecastStatusTheme, type AssistantInsight, type ForecastSummary } from "../../lib/insights";
+import { forecastStatusCopy, forecastStatusTheme, type AssistantInsight, type ForecastSummary } from "../../lib/insights";
 
 interface AssistantFeedProps {
   insights: AssistantInsight[];
@@ -15,6 +15,7 @@ const TONE_COLORS: Record<AssistantInsight["tone"], string> = {
 };
 
 export function AssistantFeed({ insights, status }: AssistantFeedProps) {
+  const copy = forecastStatusCopy(status);
   const theme = forecastStatusTheme(status);
 
   return (
@@ -24,7 +25,7 @@ export function AssistantFeed({ insights, status }: AssistantFeedProps) {
           <p style={styles.eyebrow}>Assistant Feed</p>
           <h2 style={styles.title}>Notes de votre Money Pulse</h2>
           <p style={styles.subtitle}>
-            Des signaux courts pour vous aider a comprendre votre trajectoire sans lire toute la timeline.
+            {copy.sectionSubtitle}
           </p>
         </div>
       </div>
