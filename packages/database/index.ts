@@ -53,6 +53,17 @@ export interface CreateTransactionInput {
   userEmail: string;
 }
 
+export interface UpdateTransactionInput {
+  amount: number;
+  category?: string | null;
+  currency?: string;
+  date?: string;
+  label: string;
+  transactionId: string;
+  type: "expense" | "income";
+  userEmail: string;
+}
+
 export interface RegisterUserInput {
   email: string;
   name?: string | null;
@@ -198,6 +209,61 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
       date: input.date ? new Date(input.date) : undefined,
       label: input.label,
       userId: user.id,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  return mapTransactionRecord(transaction);
+}
+
+export async function getTransactionById(transactionId: string, userEmail: string): Promise<TransactionRecord> {
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      id: transactionId,
+      user: {
+        email: userEmail,
+      },
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!transaction) {
+    throw new Error("Transaction introuvable.");
+  }
+
+  return mapTransactionRecord(transaction);
+}
+
+export async function updateTransaction(input: UpdateTransactionInput): Promise<TransactionRecord> {
+  const normalizedAmount = Math.abs(input.amount);
+  const signedAmount = input.type === "expense" ? -normalizedAmount : normalizedAmount;
+  const existingTransaction = await prisma.transaction.findFirst({
+    where: {
+      id: input.transactionId,
+      user: {
+        email: input.userEmail,
+      },
+    },
+  });
+
+  if (!existingTransaction) {
+    throw new Error("Transaction introuvable.");
+  }
+
+  const transaction = await prisma.transaction.update({
+    where: {
+      id: input.transactionId,
+    },
+    data: {
+      amount: signedAmount,
+      category: input.category ?? null,
+      currency: input.currency ?? existingTransaction.currency,
+      date: input.date ? new Date(input.date) : existingTransaction.date,
+      label: input.label,
     },
     include: {
       user: true,

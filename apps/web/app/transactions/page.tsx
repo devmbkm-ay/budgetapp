@@ -276,18 +276,26 @@ export default function TransactionsPage() {
                         {formatCurrency(transaction.amount, transaction.currency)}
                       </strong>
                       <span style={styles.transactionDay}>{formatShortDate(transaction.date)}</span>
-                      <button
-                        type="button"
-                        onClick={() => void handleDelete(transaction.id)}
-                        disabled={deletingId === transaction.id}
-                        style={{
-                          ...styles.deleteButton,
-                          cursor: deletingId === transaction.id ? "progress" : "pointer",
-                          opacity: deletingId === transaction.id ? 0.6 : 1,
-                        }}
-                      >
-                        {deletingId === transaction.id ? "Suppression..." : "Supprimer"}
-                      </button>
+                      <div style={styles.transactionActions}>
+                        <Link
+                          href={`/transactions/${transaction.id}/edit`}
+                          style={styles.editButton}
+                        >
+                          Modifier
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(transaction.id)}
+                          disabled={deletingId === transaction.id}
+                          style={{
+                            ...styles.deleteButton,
+                            cursor: deletingId === transaction.id ? "progress" : "pointer",
+                            opacity: deletingId === transaction.id ? 0.6 : 1,
+                          }}
+                        >
+                          {deletingId === transaction.id ? "Suppression..." : "Supprimer"}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
@@ -538,8 +546,24 @@ const styles: Record<string, React.CSSProperties> = {
     color: "rgba(208, 224, 255, 0.56)",
     fontSize: "0.88rem",
   },
-  deleteButton: {
+  transactionActions: {
+    display: "flex",
+    gap: "8px",
     marginTop: "8px",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  editButton: {
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(100, 210, 255, 0.28)",
+    background: "rgba(100, 210, 255, 0.08)",
+    color: "#bde8ff",
+    fontSize: "0.76rem",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  deleteButton: {
     padding: "8px 12px",
     borderRadius: "999px",
     border: "1px solid rgba(255, 142, 135, 0.32)",
