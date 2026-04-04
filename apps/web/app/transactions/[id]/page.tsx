@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ConfirmDialog } from "../../_components/confirm-dialog";
 import {
   categoryEmoji,
   DEFAULT_TRANSACTION_CATEGORY_LABEL,
@@ -20,6 +21,7 @@ export default function TransactionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!transactionId) {
@@ -84,14 +86,6 @@ export default function TransactionDetailPage() {
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Supprimer cette transaction de votre historique ?",
-    );
-
-    if (!shouldDelete) {
-      return;
-    }
-
     try {
       setIsDeleting(true);
       setError(null);
@@ -121,6 +115,7 @@ export default function TransactionDetailPage() {
       );
     } finally {
       setIsDeleting(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -160,6 +155,21 @@ export default function TransactionDetailPage() {
 
   return (
     <main style={styles.page}>
+      <ConfirmDialog
+        open={isConfirmOpen}
+        title="Supprimer cette transaction ?"
+        description="La transaction sera retiree de votre historique et vous reviendrez automatiquement a la liste des mouvements."
+        confirmLabel="Supprimer"
+        isBusy={isDeleting}
+        onCancel={() => {
+          if (!isDeleting) {
+            setIsConfirmOpen(false);
+          }
+        }}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+      />
       <div style={styles.ambientBlue} />
       <div style={styles.ambientCoral} />
 
@@ -181,7 +191,7 @@ export default function TransactionDetailPage() {
             </Link>
             <button
               type="button"
-              onClick={() => void handleDelete()}
+              onClick={() => setIsConfirmOpen(true)}
               disabled={isDeleting}
               style={{
                 ...styles.deleteButton,

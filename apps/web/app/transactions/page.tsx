@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { ConfirmDialog } from "../_components/confirm-dialog";
 import {
   categoryEmoji,
   DEFAULT_TRANSACTION_CATEGORY_LABEL,
@@ -19,6 +20,7 @@ export default function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -90,14 +92,6 @@ export default function TransactionsPage() {
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Supprimer cette transaction de votre historique ?",
-    );
-
-    if (!shouldDelete) {
-      return;
-    }
-
     try {
       setDeletingId(transactionId);
       setError(null);
@@ -128,11 +122,29 @@ export default function TransactionsPage() {
       );
     } finally {
       setDeletingId(null);
+      setPendingDeleteId((currentId) => (currentId === transactionId ? null : currentId));
     }
   };
 
   return (
     <main style={styles.page}>
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Supprimer cette transaction ?"
+        description="Cette action retirera la transaction de votre historique visible. Vous pourrez continuer a gerer le reste de votre timeline normalement."
+        confirmLabel="Supprimer"
+        isBusy={pendingDeleteId !== null && deletingId === pendingDeleteId}
+        onCancel={() => {
+          if (!deletingId) {
+            setPendingDeleteId(null);
+          }
+        }}
+        onConfirm={() => {
+          if (pendingDeleteId) {
+            void handleDelete(pendingDeleteId);
+          }
+        }}
+      />
       <div style={styles.ambientBlue} />
       <div style={styles.ambientCoral} />
 
@@ -274,7 +286,7 @@ export default function TransactionsPage() {
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            void handleDelete(transaction.id);
+                            setPendingDeleteId(transaction.id);
                           }}
                           disabled={deletingId === transaction.id}
                           style={{
