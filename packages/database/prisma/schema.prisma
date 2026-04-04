@@ -16,6 +16,7 @@ model User {
   id           String        @id @default(uuid())
   email        String        @unique
   name         String?
+  passwordHash String        @default("")
   transactions Transaction[] // Un utilisateur a plusieurs transactions
   createdAt    DateTime      @default(now())
 }

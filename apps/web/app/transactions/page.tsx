@@ -52,6 +52,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -117,6 +118,55 @@ export default function TransactionsPage() {
   }, [transactions]);
 
   const balance = totals.income - totals.expense;
+
+  const handleDelete = async (transactionId: string) => {
+    if (deletingId) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      "Supprimer cette transaction de votre historique ?",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setDeletingId(transactionId);
+      setError(null);
+
+      const response = await fetch(
+        `/api/transactions?id=${encodeURIComponent(transactionId)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      const payload = (await response.json()) as
+        | { error?: string }
+        | { message?: string };
+
+      if (!response.ok) {
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "Impossible de supprimer la transaction.",
+        );
+      }
+
+      setTransactions((currentTransactions) =>
+        currentTransactions.filter((transaction) => transaction.id !== transactionId),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Impossible de supprimer la transaction.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <main style={styles.page}>
@@ -226,6 +276,18 @@ export default function TransactionsPage() {
                         {formatCurrency(transaction.amount, transaction.currency)}
                       </strong>
                       <span style={styles.transactionDay}>{formatShortDate(transaction.date)}</span>
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(transaction.id)}
+                        disabled={deletingId === transaction.id}
+                        style={{
+                          ...styles.deleteButton,
+                          cursor: deletingId === transaction.id ? "progress" : "pointer",
+                          opacity: deletingId === transaction.id ? 0.6 : 1,
+                        }}
+                      >
+                        {deletingId === transaction.id ? "Suppression..." : "Supprimer"}
+                      </button>
                     </div>
                   </article>
                 );
@@ -475,5 +537,15 @@ const styles: Record<string, React.CSSProperties> = {
   transactionDay: {
     color: "rgba(208, 224, 255, 0.56)",
     fontSize: "0.88rem",
+  },
+  deleteButton: {
+    marginTop: "8px",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255, 142, 135, 0.32)",
+    background: "rgba(255, 142, 135, 0.08)",
+    color: "#ffb2ad",
+    fontSize: "0.76rem",
+    fontWeight: 700,
   },
 };

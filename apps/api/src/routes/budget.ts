@@ -1,21 +1,39 @@
 import { Elysia, t } from "elysia";
-import { createTransaction, listTransactions } from "../../../../packages/database/index.ts";
+import { createTransaction, deleteTransaction, listTransactions } from "../../../../packages/database/index.ts";
 
 export const budgetRoute = new Elysia()
     .onAfterHandle(({ set }) => {
         set.headers["Access-Control-Allow-Origin"] = "*";
-        set.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+        set.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS";
         set.headers["Access-Control-Allow-Headers"] = "Content-Type";
     })
     .options("/transactions", ({ set }) => {
         set.status = 204;
         return "";
     })
-    .get("/budget", async () => {
-        return listTransactions();
+    .get("/budget", async ({ query, set }) => {
+        if (!query.userEmail) {
+            set.status = 400;
+            return { error: "Le paramètre userEmail est requis." };
+        }
+
+        return listTransactions(query.userEmail);
+    }, {
+        query: t.Object({
+            userEmail: t.String(),
+        }),
     })
-    .get("/transactions", async () => {
-        return listTransactions();
+    .get("/transactions", async ({ query, set }) => {
+        if (!query.userEmail) {
+            set.status = 400;
+            return { error: "Le paramètre userEmail est requis." };
+        }
+
+        return listTransactions(query.userEmail);
+    }, {
+        query: t.Object({
+            userEmail: t.String(),
+        }),
     })
     .post("/transactions", async ({ body, set }) => {
         const transaction = await createTransaction(body);
@@ -38,4 +56,27 @@ export const budgetRoute = new Elysia()
             userEmail: t.String(),
             userName: t.Optional(t.String()),
         })
+    })
+    .delete("/transactions/:id", async ({ params, query, set }) => {
+        try {
+            const transaction = await deleteTransaction(params.id, query.userEmail);
+
+            return {
+                message: "Transaction supprimée",
+                data: transaction,
+            };
+        } catch (error) {
+            set.status = 404;
+
+            return {
+                error: error instanceof Error ? error.message : "Transaction introuvable.",
+            };
+        }
+    }, {
+        params: t.Object({
+            id: t.String(),
+        }),
+        query: t.Object({
+            userEmail: t.String(),
+        }),
     });

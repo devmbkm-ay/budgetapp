@@ -73,7 +73,7 @@ async function main() {
   console.log("");
   console.log("BudgetApp dev launcher");
   console.log("----------------------");
-  console.log("Web: http://localhost:3000");
+  console.log("Web: http://localhost:3030");
   console.log("API: http://localhost:3001");
   console.log("Health: http://localhost:3001/health");
 

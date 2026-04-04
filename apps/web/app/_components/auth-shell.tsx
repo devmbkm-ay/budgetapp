@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, type CSSProperties, type FormEvent } from "react";
 
 type AuthMode = "login" | "register";
 
@@ -9,13 +10,62 @@ interface AuthShellProps {
   mode: AuthMode;
 }
 
+interface LoginResponse {
+  error?: string;
+}
+
 export function AuthShell({ mode }: AuthShellProps) {
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const isLogin = mode === "login";
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setInfoMessage("Le parcours visuel est prêt. Il ne reste plus qu'à brancher l'authentification backend.");
+    setErrorMessage(null);
+
+    if (!isLogin && password !== confirmPassword) {
+      setErrorMessage("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/auth/${mode}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          isLogin
+            ? { email, password }
+            : { email, name, password },
+        ),
+      });
+      const payload = (await response.json()) as LoginResponse;
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Authentification impossible.");
+      }
+
+      const redirectTo = searchParams.get("redirectTo") ?? "/transactions";
+      router.replace(redirectTo);
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Authentification impossible.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -26,17 +76,19 @@ export function AuthShell({ mode }: AuthShellProps) {
         <section style={styles.hero}>
           <p style={styles.eyebrow}>Secure budget flow</p>
           <h1 style={styles.title}>
-            {isLogin ? "Reprenez le controle de votre budget." : "Créez un espace budget qui vous ressemble."}
+            {isLogin
+              ? "Reprenez le contrôle de votre budget."
+              : "Créez un espace budget qui vous ressemble."}
           </h1>
           <p style={styles.subtitle}>
             {isLogin
               ? "Retrouvez vos transactions, vos totaux et votre historique dans une interface pensée pour aller vite."
-              : "Commencez avec une expérience simple, élégante et prête à accueillir votre futur backend d'authentification."}
+              : "Commencez avec une expérience simple, élégante et branchée sur une vraie session utilisateur."}
           </p>
           <div style={styles.heroBadges}>
             <span style={styles.badge}>Vue claire</span>
             <span style={styles.badge}>Flux rapide</span>
-            <span style={styles.badge}>Sécurité à brancher</span>
+            <span style={styles.badge}>Pages protégées</span>
           </div>
         </section>
 
@@ -49,18 +101,36 @@ export function AuthShell({ mode }: AuthShellProps) {
           >
             <article style={{ ...styles.cardFace, ...styles.cardFront }}>
               <AuthForm
-                mode="login"
                 active={isLogin}
-                infoMessage={isLogin ? infoMessage : null}
+                email={email}
+                errorMessage={isLogin ? errorMessage : null}
+                isSubmitting={isSubmitting}
+                mode="login"
+                onEmailChange={setEmail}
+                onNameChange={setName}
+                onPasswordChange={setPassword}
+                onConfirmPasswordChange={setConfirmPassword}
                 onSubmit={handleSubmit}
+                password={password}
+                name={name}
+                confirmPassword={confirmPassword}
               />
             </article>
             <article style={{ ...styles.cardFace, ...styles.cardBack }}>
               <AuthForm
-                mode="register"
                 active={!isLogin}
-                infoMessage={!isLogin ? infoMessage : null}
+                email={email}
+                errorMessage={!isLogin ? errorMessage : null}
+                isSubmitting={isSubmitting}
+                mode="register"
+                onEmailChange={setEmail}
+                onNameChange={setName}
+                onPasswordChange={setPassword}
+                onConfirmPasswordChange={setConfirmPassword}
                 onSubmit={handleSubmit}
+                password={password}
+                name={name}
+                confirmPassword={confirmPassword}
               />
             </article>
           </div>
@@ -72,12 +142,35 @@ export function AuthShell({ mode }: AuthShellProps) {
 
 interface AuthFormProps {
   active: boolean;
-  infoMessage: string | null;
+  confirmPassword: string;
+  email: string;
+  errorMessage: string | null;
+  isSubmitting: boolean;
   mode: AuthMode;
+  name: string;
+  onConfirmPasswordChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onNameChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  password: string;
 }
 
-function AuthForm({ active, infoMessage, mode, onSubmit }: AuthFormProps) {
+function AuthForm({
+  active,
+  confirmPassword,
+  email,
+  errorMessage,
+  isSubmitting,
+  mode,
+  name,
+  onConfirmPasswordChange,
+  onEmailChange,
+  onNameChange,
+  onPasswordChange,
+  onSubmit,
+  password,
+}: AuthFormProps) {
   const isLogin = mode === "login";
 
   return (
@@ -88,7 +181,9 @@ function AuthForm({ active, infoMessage, mode, onSubmit }: AuthFormProps) {
       }}
     >
       <div style={styles.formTop}>
-        <p style={styles.formEyebrow}>{isLogin ? "Connexion" : "Création de compte"}</p>
+        <p style={styles.formEyebrow}>
+          {isLogin ? "Connexion" : "Création de compte"}
+        </p>
         <h2 style={styles.formTitle}>{isLogin ? "Bon retour" : "Bienvenue"}</h2>
         <p style={styles.formSubtitle}>
           {isLogin
@@ -101,32 +196,66 @@ function AuthForm({ active, infoMessage, mode, onSubmit }: AuthFormProps) {
         {!isLogin ? (
           <label style={styles.field}>
             Nom complet
-            <input type="text" placeholder="Ricardo Silva" style={styles.input} />
+            <input
+              required
+              type="text"
+              placeholder="Ricardo Silva"
+              style={styles.input}
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+            />
           </label>
         ) : null}
 
         <label style={styles.field}>
           Email
-          <input type="email" placeholder="ricardo@test.com" style={styles.input} />
+          <input
+            required
+            type="email"
+            placeholder="ricardo@test.com"
+            style={styles.input}
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+          />
         </label>
 
         <label style={styles.field}>
           Mot de passe
-          <input type="password" placeholder="••••••••" style={styles.input} />
+          <input
+            required
+            minLength={8}
+            type="password"
+            placeholder="••••••••"
+            style={styles.input}
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value)}
+          />
         </label>
 
         {!isLogin ? (
           <label style={styles.field}>
             Confirmer le mot de passe
-            <input type="password" placeholder="••••••••" style={styles.input} />
+            <input
+              required
+              minLength={8}
+              type="password"
+              placeholder="••••••••"
+              style={styles.input}
+              value={confirmPassword}
+              onChange={(event) => onConfirmPasswordChange(event.target.value)}
+            />
           </label>
         ) : null}
 
-        <button type="submit" style={styles.submitButton}>
-          {isLogin ? "Se connecter" : "Créer mon compte"}
+        <button type="submit" style={styles.submitButton} disabled={isSubmitting}>
+          {isSubmitting
+            ? "Patientez..."
+            : isLogin
+              ? "Se connecter"
+              : "Créer mon compte"}
         </button>
 
-        {infoMessage ? <div style={styles.infoBanner}>{infoMessage}</div> : null}
+        {errorMessage ? <div style={styles.errorBanner}>{errorMessage}</div> : null}
       </form>
 
       <div style={styles.switchRow}>
@@ -141,7 +270,7 @@ function AuthForm({ active, infoMessage, mode, onSubmit }: AuthFormProps) {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     position: "relative",
@@ -312,13 +441,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "1rem",
     cursor: "pointer",
     boxShadow: "0 18px 42px rgba(10, 132, 255, 0.18)",
+    opacity: 1,
   },
-  infoBanner: {
+  errorBanner: {
     borderRadius: "18px",
     padding: "14px 16px",
-    background: "rgba(255,255,255,0.08)",
+    background: "rgba(119, 24, 31, 0.42)",
     border: "1px solid rgba(255,255,255,0.12)",
-    color: "rgba(237, 243, 255, 0.84)",
+    color: "#ffe7e8",
     lineHeight: 1.6,
   },
   switchRow: {

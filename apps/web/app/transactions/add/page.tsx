@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, type CSSProperties, type FormEvent } from "react";
+import React, { useState, useEffect, type CSSProperties, type FormEvent } from "react";
 
 type TransactionType = "expense" | "income";
 
@@ -81,14 +81,35 @@ export default function MobileFintechAdd() {
     const [amount, setAmount] = useState("");
     const [label, setLabel] = useState("");
     const [category, setCategory] = useState(DEFAULT_CATEGORY_ID);
-    const [date, setDate] = useState(getCurrentDate());
+    const [date, setDate] = useState("");
     const [note, setNote] = useState("");
     const [showDetails, setShowDetails] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [savedTransaction, setSavedTransaction] = useState<TransactionSnapshot | null>(null);
     const [cardTilt, setCardTilt] = useState({ rotateX: 0, rotateY: 0 });
-    const [isCapturingPreview, setIsCapturingPreview] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isCapturingPreview, setIsCapturingPreview] = useState(false);
+    const [initialBalance, setInitialBalance] = useState<number | null>(null);
+
+    useEffect(() => {
+        setDate((currentDate) => currentDate || getCurrentDate());
+
+        const fetchBalance = async () => {
+            try {
+                const response = await fetch("/api/transactions");
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    const balance = data.reduce((acc, tx) => {
+                        return acc + (tx.type === "income" ? tx.amount : -tx.amount);
+                    }, 0);
+                    setInitialBalance(balance);
+                }
+            } catch (err) {
+                console.error("Failed to fetch initial balance", err);
+            }
+        };
+        fetchBalance();
+    }, []);
 
     const isExpense = type === "expense";
     const filteredCategories = CATEGORIES.filter((c) => c.type === type);
@@ -104,7 +125,10 @@ export default function MobileFintechAdd() {
         };
     const accentColor = selectedCategory?.color ?? palette.accent;
     const amountValue = parseFloat(amount || "0");
-    const isSubmitDisabled = amountValue === 0 || !label.trim();
+    const currentBalance = initialBalance !== null
+        ? initialBalance + (isExpense ? -amountValue : amountValue)
+        : null;
+    const isSubmitDisabled = isSubmitting || amountValue <= 0 || !label.trim();
     const formattedPreviewAmount = `${isExpense ? "-" : "+"} ${amountValue.toFixed(2)} €`;
     const amountInteger = `${isExpense ? "-" : "+"}${Math.floor(amountValue).toString()}`;
     const amountDecimals = amountValue.toFixed(2).split(".")[1] ?? "00";
@@ -120,7 +144,12 @@ export default function MobileFintechAdd() {
     };
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setAmount(formatAmount(e.target.value));
+        const val = e.target.value;
+        if (val === "") {
+            setAmount("");
+            return;
+        }
+        setAmount(formatAmount(val));
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -136,53 +165,46 @@ export default function MobileFintechAdd() {
         setSubmitError(null);
 
         try {
+            const body = {
+                amount: amountValue,
+                category: selectedCategory.name || null,
+                currency: "EUR",
+                date: date + "T12:00:00Z",
+                label: label.trim(),
+                note: note.trim() || undefined,
+                type,
+            };
+
             const response = await fetch("/api/transactions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    amount: amountValue,
-                    category: selectedCategory.name || null,
-                    currency: "EUR",
-                    date,
-                    label: label.trim(),
-                    note: note.trim() || undefined,
-                    type,
-                    userEmail: "ricardo@test.com",
-                    userName: "Ricardo",
-                }),
+                body: JSON.stringify(body),
             });
+
+            const payload = await response.json().catch(() => null);
 
             if (!response.ok) {
-                const errorPayload = await response.json().catch(() => null) as { error?: string } | null;
-                throw new Error(errorPayload?.error ?? "Impossible d'enregistrer la transaction.");
+                throw new Error(payload?.error ?? "Impossible d'enregistrer la transaction.");
             }
 
-            const payload = await response.json() as {
-                data?: {
-                    amount: number;
-                    category: string | null;
-                    date: string;
-                    label: string;
-                    type: TransactionType;
-                };
-            };
-
-            await new Promise((resolve) => setTimeout(resolve, 320));
-
             setSavedTransaction({
-                amount: `${payload.data?.type === "income" ? "+" : "-"} ${(payload.data?.amount ?? amountValue).toFixed(2)} €`,
-                label: payload.data?.label ?? label.trim(),
-                categoryName: payload.data?.category ?? selectedCategory.name ?? "Categorie",
+                amount: `${type === "income" ? "+" : "-"} ${amountValue.toFixed(2)} €`,
+                label: label.trim(),
+                categoryName: selectedCategory.name ?? "Categorie",
                 categoryIcon: selectedCategory.icon || "•",
-                date: payload.data?.date?.slice(0, 10) ?? date,
+                date: date,
                 note: note.trim(),
-                type: payload.data?.type ?? type,
+                type: type,
             });
+
+            // Update initialBalance for next entry
+            setInitialBalance(prev => prev !== null ? prev + (type === "income" ? amountValue : -amountValue) : null);
+            
         } catch (error) {
-            console.error(error);
-            setSubmitError(error instanceof Error ? error.message : "Connexion a l'API impossible.");
+            console.error("Submission error:", error);
+            setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'enregistrement.");
         } finally {
             setIsSubmitting(false);
             setIsCapturingPreview(false);
@@ -309,16 +331,32 @@ export default function MobileFintechAdd() {
                 </div>
 
                 <div style={styles.amountContainer}>
-                    <span style={{ ...styles.currencySymbol, color: accentColor }}>{isExpense ? "-" : "+"} €</span>
-                    <input
-                        type="number"
-                        inputMode="decimal"
-                        value={amount}
-                        onChange={handleAmountChange}
-                        style={{ ...styles.amountInput, textShadow: palette.textShadow }}
-                        placeholder="0.00"
-                        autoFocus
-                    />
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={styles.amountInputRow}>
+                            <span style={{ ...styles.currencySymbol, color: accentColor }}>{isExpense ? "-" : "+"} €</span>
+                            <input
+                                type="number"
+                                inputMode="decimal"
+                                value={amount}
+                                onChange={handleAmountChange}
+                                style={{ ...styles.amountInput, textShadow: palette.textShadow }}
+                                placeholder="0.00"
+                                autoFocus
+                            />
+                        </div>
+                        {currentBalance !== null && (
+                            <p style={{ 
+                                margin: "8px 0 0", 
+                                fontSize: "0.9rem", 
+                                color: "rgba(255,255,255,0.6)",
+                                letterSpacing: "0.05em"
+                            }}>
+                                SOLDE APRÈS : <span style={{ color: currentBalance >= 0 ? "#32D74B" : "#FF453A", fontWeight: 700 }}>
+                                    {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(currentBalance)}
+                                </span>
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -454,25 +492,27 @@ export default function MobileFintechAdd() {
                     </section>
                 )}
 
-                <div style={{ height: 120 }} /> {/* Padding for sticky button */}
+                <div style={{ height: 208 }} /> {/* Padding for sticky button + app nav */}
             </form>
 
             {/* --- FIXED SUBMIT BUTTON --- */}
-            <div style={styles.actionArea}>
-                <button
-                    form="transaction-form"
-                    type="submit"
-                    disabled={isSubmitDisabled}
-                    style={{
-                        ...styles.submitButton,
-                        background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
-                        opacity: isSubmitDisabled ? 0.5 : 1,
-                        boxShadow: palette.actionShadow,
-                    }}
-                >
-                    {isSubmitting ? "Enregistrement..." : `Confirmer ${isExpense ? "la dépense" : "le revenu"}`}
-                </button>
-            </div>
+            {!savedTransaction ? (
+                <div style={styles.actionArea}>
+                    <button
+                        form="transaction-form"
+                        type="submit"
+                        disabled={isSubmitDisabled}
+                        style={{
+                            ...styles.submitButton,
+                            background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
+                            opacity: isSubmitDisabled ? 0.5 : 1,
+                            boxShadow: palette.actionShadow,
+                        }}
+                    >
+                        {isSubmitting ? "Enregistrement..." : `Confirmer ${isExpense ? "la dépense" : "le revenu"}`}
+                    </button>
+                </div>
+            ) : null}
 
             <style jsx>{`
                 @keyframes floatOne {
@@ -644,10 +684,16 @@ const styles: Record<string, CSSProperties> = {
         transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
         cursor: "pointer",
     },
+    amountInputRow: {
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "center",
+    },
     amountContainer: {
         display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         justifyContent: "center",
-        alignItems: "baseline",
     },
     currencySymbol: {
         fontSize: "1.5rem",
@@ -922,17 +968,21 @@ const styles: Record<string, CSSProperties> = {
     },
     actionArea: {
         position: "fixed",
-        bottom: "0",
+        bottom: "96px",
         left: "0",
         right: "0",
         padding: "20px",
         background: "linear-gradient(180deg, rgba(9, 17, 31, 0) 0%, rgba(9, 17, 31, 0.82) 34%, rgba(9, 17, 31, 0.94) 100%)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
-        zIndex: 12,
+        zIndex: 40,
+        pointerEvents: "none",
     },
     submitButton: {
         width: "100%",
+        maxWidth: "min(640px, calc(100vw - 40px))",
+        margin: "0 auto",
+        display: "block",
         padding: "18px",
         borderRadius: "18px",
         border: "none",
@@ -941,6 +991,7 @@ const styles: Record<string, CSSProperties> = {
         fontWeight: 700,
         cursor: "pointer",
         transition: "all 0.25s ease",
+        pointerEvents: "auto",
     },
     successOverlay: {
         position: "fixed",
