@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-
-type TransactionType = "expense" | "income";
+import type { TransactionRecord, TransactionType } from "../../../../lib/transactions";
 
 interface Category {
   color: string;
@@ -25,16 +24,6 @@ interface ModePalette {
   secondaryGlow: string;
   textShadow: string;
   toggleActive: string;
-}
-
-interface TransactionRecord {
-  amount: number;
-  category: string | null;
-  currency: string;
-  date: string;
-  id: string;
-  label: string;
-  type: TransactionType;
 }
 
 interface SavedTransactionSnapshot {

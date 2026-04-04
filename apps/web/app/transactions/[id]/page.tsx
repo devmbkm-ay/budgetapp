@@ -3,56 +3,14 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-type TransactionType = "expense" | "income";
-
-interface TransactionRecord {
-  amount: number;
-  category: string | null;
-  currency: string;
-  date: string;
-  id: string;
-  label: string;
-  type: TransactionType;
-  userEmail: string;
-  userId: string;
-  userName: string | null;
-}
-
-const formatCurrency = (amount: number, currency: string) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency,
-  }).format(amount);
-
-const formatLongDate = (value: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
-
-const formatShortDate = (value: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-
-const categoryEmoji = (category: string | null) => {
-  const normalized = (category ?? "").toLowerCase();
-
-  if (normalized.includes("alim")) return "🍽️";
-  if (normalized.includes("transport")) return "🚇";
-  if (normalized.includes("shop")) return "🛍️";
-  if (normalized.includes("loisir")) return "🎞️";
-  if (normalized.includes("salaire")) return "💼";
-  if (normalized.includes("freelance")) return "✨";
-
-  return "•";
-};
+import {
+  categoryEmoji,
+  DEFAULT_TRANSACTION_CATEGORY_LABEL,
+  formatCurrency,
+  formatLongDate,
+  formatShortDate,
+  type TransactionRecord,
+} from "../../../lib/transactions";
 
 export default function TransactionDetailPage() {
   const router = useRouter();
@@ -250,7 +208,7 @@ export default function TransactionDetailPage() {
                 {categoryEmoji(transaction.category)}
               </div>
               <div>
-                <p style={styles.badgeLabel}>{transaction.category ?? "Categorie libre"}</p>
+                <p style={styles.badgeLabel}>{transaction.category ?? DEFAULT_TRANSACTION_CATEGORY_LABEL}</p>
                 <p style={styles.badgeMeta}>{typeLabel}</p>
               </div>
             </div>
@@ -296,7 +254,7 @@ export default function TransactionDetailPage() {
               </div>
               <div style={styles.factRow}>
                 <span style={styles.factKey}>Categorie</span>
-                <span style={styles.factValue}>{transaction.category ?? "Categorie libre"}</span>
+                <span style={styles.factValue}>{transaction.category ?? DEFAULT_TRANSACTION_CATEGORY_LABEL}</span>
               </div>
               <div style={styles.factRow}>
                 <span style={styles.factKey}>Date</span>

@@ -3,51 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
-interface TransactionRecord {
-  amount: number;
-  category: string | null;
-  currency: string;
-  date: string;
-  id: string;
-  label: string;
-  type: "expense" | "income";
-  userEmail: string;
-  userId: string;
-  userName: string | null;
-}
-
-const formatCurrency = (amount: number, currency: string) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency,
-  }).format(amount);
-
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
-
-const formatShortDate = (value: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(value));
-
-const categoryEmoji = (category: string | null) => {
-  const normalized = (category ?? "").toLowerCase();
-
-  if (normalized.includes("alim")) return "🍽️";
-  if (normalized.includes("transport")) return "🚇";
-  if (normalized.includes("shop")) return "🛍️";
-  if (normalized.includes("loisir")) return "🎞️";
-  if (normalized.includes("salaire")) return "💼";
-  if (normalized.includes("freelance")) return "✨";
-
-  return "•";
-};
+import {
+  categoryEmoji,
+  DEFAULT_TRANSACTION_CATEGORY_LABEL,
+  formatCurrency,
+  formatDate,
+  formatShortDate,
+  type TransactionRecord,
+} from "../../lib/transactions";
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -286,7 +249,7 @@ export default function TransactionsPage() {
                       <div>
                         <h3 style={styles.transactionLabel}>{transaction.label}</h3>
                         <p style={styles.transactionMeta}>
-                          {transaction.category ?? "Categorie libre"} · {formatDate(transaction.date)}
+                          {transaction.category ?? DEFAULT_TRANSACTION_CATEGORY_LABEL} · {formatDate(transaction.date)}
                         </p>
                         <p style={styles.transactionMetaMuted}>
                           {transaction.userName ?? transaction.userEmail}
@@ -298,7 +261,7 @@ export default function TransactionsPage() {
                         {amountPrefix}
                         {formatCurrency(transaction.amount, transaction.currency)}
                       </strong>
-                      <span style={styles.transactionDay}>{formatShortDate(transaction.date)}</span>
+                      <span style={styles.transactionDay}>{formatShortDate(transaction.date, { includeYear: false })}</span>
                       <div style={styles.transactionActions}>
                         <Link
                           href={`/transactions/${transaction.id}/edit`}
