@@ -55,6 +55,45 @@ const listTransactions = mock(async (userEmail: string) => ([
   },
 ]));
 
+const listTransactionsByDateRange = mock(async (userEmail: string) => ([
+  {
+    amount: 1800,
+    category: "Salaire",
+    currency: "EUR",
+    date: "2026-04-02T12:00:00Z",
+    id: "tx_income",
+    label: "Salaire avril",
+    type: "income",
+    userEmail,
+    userId: "user_1",
+    userName: "Alice",
+  },
+  {
+    amount: 120,
+    category: "Alimentation",
+    currency: "EUR",
+    date: "2026-04-03T12:00:00Z",
+    id: "tx_food",
+    label: "Courses semaine",
+    type: "expense",
+    userEmail,
+    userId: "user_1",
+    userName: "Alice",
+  },
+  {
+    amount: 60,
+    category: "Loisirs",
+    currency: "EUR",
+    date: "2026-04-04T12:00:00Z",
+    id: "tx_fun",
+    label: "Concert",
+    type: "expense",
+    userEmail,
+    userId: "user_1",
+    userName: "Alice",
+  },
+]));
+
 const updateTransaction = mock(async (input: { transactionId: string; userEmail: string }) => ({
   amount: 99.5,
   category: "Freelance",
@@ -73,6 +112,7 @@ mock.module("../../../../packages/database/index.ts", () => ({
   deleteTransaction,
   getTransactionById,
   listTransactions,
+  listTransactionsByDateRange,
   updateTransaction,
 }));
 
@@ -88,6 +128,7 @@ describe("budgetRoute", () => {
     deleteTransaction.mockClear();
     getTransactionById.mockClear();
     listTransactions.mockClear();
+    listTransactionsByDateRange.mockClear();
     updateTransaction.mockClear();
   });
 
@@ -115,6 +156,30 @@ describe("budgetRoute", () => {
       userId: "user_1",
       userName: "Alice",
     });
+  });
+
+  test("GET /insights/summary returns monthly assistant data", async () => {
+    const app = createApp();
+    const response = await app.handle(
+      new Request("http://localhost/insights/summary?userEmail=alice%40example.com"),
+    );
+    const payload = await response.json() as {
+      categories: Array<{ category: string }>;
+      forecast: { status: string };
+      insights: Array<{ id: string }>;
+      totals: { balance: number; expenses: number; income: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(listTransactionsByDateRange).toHaveBeenCalledTimes(1);
+    expect(payload.totals).toEqual({
+      balance: 1620,
+      expenses: 180,
+      income: 1800,
+    });
+    expect(["stable", "watch"]).toContain(payload.forecast.status);
+    expect(payload.categories[0]?.category).toBe("Alimentation");
+    expect(payload.insights.length).toBeGreaterThan(0);
   });
 
   test("PATCH /transactions/:id forwards the body and route id to updateTransaction", async () => {
@@ -196,5 +261,30 @@ describe("budgetRoute", () => {
 
     expect(response.status).toBe(422);
     expect(listTransactions).not.toHaveBeenCalled();
+  });
+
+  test("GET /insights/summary handles an empty month gracefully", async () => {
+    listTransactionsByDateRange.mockImplementationOnce(async () => []);
+
+    const app = createApp();
+    const response = await app.handle(
+      new Request("http://localhost/insights/summary?userEmail=alice%40example.com"),
+    );
+    const payload = await response.json() as {
+      categories: unknown[];
+      forecast: { status: string };
+      insights: Array<{ id: string }>;
+      totals: { balance: number; expenses: number; income: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.totals).toEqual({
+      balance: 0,
+      expenses: 0,
+      income: 0,
+    });
+    expect(payload.categories).toEqual([]);
+    expect(payload.forecast.status).toBe("stable");
+    expect(payload.insights[0]?.id).toBe("empty-month");
   });
 });

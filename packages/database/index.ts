@@ -316,3 +316,29 @@ export async function listTransactions(userEmail: string): Promise<TransactionRe
 
   return transactions.map((transaction) => mapTransactionRecord(transaction));
 }
+
+export async function listTransactionsByDateRange(
+  userEmail: string,
+  startDate: Date,
+  endDate: Date,
+): Promise<TransactionRecord[]> {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      date: {
+        gte: startDate,
+        lt: endDate,
+      },
+      user: {
+        email: userEmail,
+      },
+    },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      date: "desc",
+    },
+  });
+
+  return transactions.map((transaction) => mapTransactionRecord(transaction));
+}

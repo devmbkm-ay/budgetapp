@@ -1,5 +1,13 @@
 import { Elysia, t } from "elysia";
-import { createTransaction, deleteTransaction, getTransactionById, listTransactions, updateTransaction } from "../../../../packages/database/index.ts";
+import { buildMonthlyInsights } from "../../../../lib/finance-intelligence.ts";
+import { createTransaction, deleteTransaction, getTransactionById, listTransactions, listTransactionsByDateRange, updateTransaction } from "../../../../packages/database/index.ts";
+
+function getCurrentMonthRange(now = new Date()) {
+    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+
+    return { endDate, startDate };
+}
 
 export const budgetRoute = new Elysia()
     .onAfterHandle(({ set }) => {
@@ -30,6 +38,16 @@ export const budgetRoute = new Elysia()
         }
 
         return listTransactions(query.userEmail);
+    }, {
+        query: t.Object({
+            userEmail: t.String(),
+        }),
+    })
+    .get("/insights/summary", async ({ query }) => {
+        const { endDate, startDate } = getCurrentMonthRange();
+        const transactions = await listTransactionsByDateRange(query.userEmail, startDate, endDate);
+
+        return buildMonthlyInsights(transactions);
     }, {
         query: t.Object({
             userEmail: t.String(),

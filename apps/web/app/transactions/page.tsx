@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AssistantFeed } from "../_components/assistant-feed";
+import { CategoryPressureCard } from "../_components/category-pressure-card";
 import { ConfirmDialog } from "../_components/confirm-dialog";
+import { ForecastCard } from "../_components/forecast-card";
+import { MoneyPulseCard } from "../_components/money-pulse-card";
+import { forecastStatusLabel, forecastStatusTheme, type InsightsSummary } from "../../lib/insights";
 import {
   categoryEmoji,
   DEFAULT_TRANSACTION_CATEGORY_LABEL,
@@ -18,6 +23,9 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [insights, setInsights] = useState<InsightsSummary | null>(null);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+  const [isInsightsLoading, setIsInsightsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -70,7 +78,53 @@ export default function TransactionsPage() {
     };
   }, []);
 
-  const totals = useMemo(() => {
+  useEffect(() => {
+    let mounted = true;
+
+    const loadInsights = async () => {
+      try {
+        setIsInsightsLoading(true);
+        setInsightsError(null);
+
+        const response = await fetch("/api/insights/summary", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as InsightsSummary | { error?: string };
+
+        if (!response.ok) {
+          throw new Error(
+            "error" in payload && payload.error
+              ? payload.error
+              : "Impossible de charger le Money Pulse.",
+          );
+        }
+
+        if (mounted) {
+          setInsights("forecast" in payload ? payload : null);
+        }
+      } catch (caughtError) {
+        if (mounted) {
+          setInsightsError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Impossible de charger le Money Pulse.",
+          );
+        }
+      } finally {
+        if (mounted) {
+          setIsInsightsLoading(false);
+        }
+      }
+    };
+
+    void loadInsights();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const timelineTotals = useMemo(() => {
     return transactions.reduce(
       (accumulator, transaction) => {
         if (transaction.type === "income") {
@@ -85,7 +139,10 @@ export default function TransactionsPage() {
     );
   }, [transactions]);
 
-  const balance = totals.income - totals.expense;
+  const balance = insights?.totals.balance ?? (timelineTotals.income - timelineTotals.expense);
+  const incomeTotal = insights?.totals.income ?? timelineTotals.income;
+  const expenseTotal = insights?.totals.expenses ?? timelineTotals.expense;
+  const insightsTheme = insights ? forecastStatusTheme(insights.forecast.status) : null;
 
   const handleDelete = async (transactionId: string) => {
     if (deletingId) {
@@ -174,21 +231,69 @@ export default function TransactionsPage() {
               {formatCurrency(Math.abs(balance), "EUR")}
             </h2>
             <p style={styles.balanceHint}>
-              {balance >= 0 ? "Vous restez au-dessus de votre base." : "Les depenses depassent les revenus."}
+              {balance >= 0 ? "Votre mois reste en territoire positif." : "Votre rythme actuel demande une correction."}
             </p>
           </article>
           <article style={styles.metricCard}>
             <p style={styles.cardLabel}>Revenus</p>
             <strong style={{ ...styles.metricValue, color: "#7ff0b6" }}>
-              {formatCurrency(totals.income, "EUR")}
+              {formatCurrency(incomeTotal, "EUR")}
             </strong>
           </article>
           <article style={styles.metricCard}>
             <p style={styles.cardLabel}>Depenses</p>
             <strong style={{ ...styles.metricValue, color: "#ff8e87" }}>
-              {formatCurrency(totals.expense, "EUR")}
+              {formatCurrency(expenseTotal, "EUR")}
             </strong>
           </article>
+        </section>
+
+        <section style={styles.insightsShell}>
+          <div style={styles.listHeader}>
+            <div>
+              <p style={styles.cardLabel}>Assistant</p>
+              <h2 style={styles.listTitle}>Money Pulse</h2>
+            </div>
+            <div style={styles.insightsBadges}>
+              {insights?.period ? (
+                <span style={styles.countPill}>{insights.period.month}</span>
+              ) : null}
+              {insights ? (
+                <span
+                  style={{
+                    ...styles.statusPill,
+                    color: insightsTheme?.accent,
+                    borderColor: insightsTheme?.borderColor,
+                    background: insightsTheme?.accentSoft,
+                  }}
+                >
+                  {forecastStatusLabel(insights.forecast.status)}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {isInsightsLoading ? (
+            <div style={styles.statePanel}>Chargement du Money Pulse...</div>
+          ) : null}
+
+          {!isInsightsLoading && insightsError ? (
+            <div style={styles.errorPanel}>
+              <strong>Assistant indisponible</strong>
+              <span>{insightsError}</span>
+            </div>
+          ) : null}
+
+          {!isInsightsLoading && !insightsError && insights ? (
+            <>
+              <div style={styles.insightsGrid}>
+                <MoneyPulseCard totals={insights.totals} status={insights.forecast.status} />
+                <ForecastCard forecast={insights.forecast} period={insights.period} />
+                <CategoryPressureCard categories={insights.categories} status={insights.forecast.status} />
+              </div>
+              <AssistantFeed insights={insights.insights} status={insights.forecast.status} />
+            </>
+          ) : null}
         </section>
 
         <section style={styles.listShell}>
@@ -382,7 +487,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   heroGrid: {
     display: "grid",
-    gridTemplateColumns: "1.5fr 1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "16px",
     marginTop: "28px",
   },
@@ -435,6 +540,14 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(22px)",
     WebkitBackdropFilter: "blur(22px)",
   },
+  insightsShell: {
+    marginTop: "22px",
+  },
+  insightsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "16px",
+  },
   listHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -442,6 +555,12 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "12px",
     marginBottom: "18px",
     flexWrap: "wrap",
+  },
+  insightsBadges: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   listTitle: {
     margin: "8px 0 0",
@@ -454,6 +573,14 @@ const styles: Record<string, React.CSSProperties> = {
     background: "rgba(255,255,255,0.08)",
     color: "rgba(227, 236, 255, 0.82)",
     fontSize: "0.9rem",
+  },
+  statusPill: {
+    padding: "10px 14px",
+    borderRadius: "999px",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    fontSize: "0.9rem",
+    fontWeight: 700,
   },
   statePanel: {
     borderRadius: "22px",
@@ -517,6 +644,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "14px",
     alignItems: "center",
     minWidth: 0,
+    flex: "1 1 260px",
   },
   iconBubble: {
     width: "46px",
@@ -548,6 +676,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "grid",
     gap: "6px",
     justifyItems: "end",
+    flex: "0 1 220px",
+    width: "100%",
   },
   transactionAmount: {
     fontSize: "1.05rem",
