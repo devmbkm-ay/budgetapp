@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 interface TransactionRecord {
@@ -49,10 +50,12 @@ const categoryEmoji = (category: string | null) => {
 };
 
 export default function TransactionsPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -252,7 +255,30 @@ export default function TransactionsPage() {
                 const amountPrefix = transaction.type === "income" ? "+" : "-";
 
                 return (
-                  <article key={transaction.id} style={styles.transactionCard}>
+                  <article
+                    key={transaction.id}
+                    style={{
+                      ...styles.transactionCard,
+                      ...(activeCardId === transaction.id ? styles.transactionCardActive : null),
+                    }}
+                    onClick={() => router.push(`/transactions/${transaction.id}`)}
+                    onMouseEnter={() => setActiveCardId(transaction.id)}
+                    onMouseLeave={() => setActiveCardId((currentId) => (
+                      currentId === transaction.id ? null : currentId
+                    ))}
+                    onFocus={() => setActiveCardId(transaction.id)}
+                    onBlur={() => setActiveCardId((currentId) => (
+                      currentId === transaction.id ? null : currentId
+                    ))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        router.push(`/transactions/${transaction.id}`);
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                  >
                     <div style={styles.transactionLeft}>
                       <div style={{ ...styles.iconBubble, color: accent }}>
                         {categoryEmoji(transaction.category)}
@@ -275,20 +301,18 @@ export default function TransactionsPage() {
                       <span style={styles.transactionDay}>{formatShortDate(transaction.date)}</span>
                       <div style={styles.transactionActions}>
                         <Link
-                          href={`/transactions/${transaction.id}`}
-                          style={styles.viewButton}
-                        >
-                          Voir
-                        </Link>
-                        <Link
                           href={`/transactions/${transaction.id}/edit`}
                           style={styles.editButton}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           Modifier
                         </Link>
                         <button
                           type="button"
-                          onClick={() => void handleDelete(transaction.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleDelete(transaction.id);
+                          }}
                           disabled={deletingId === transaction.id}
                           style={{
                             ...styles.deleteButton,
@@ -503,6 +527,13 @@ const styles: Record<string, React.CSSProperties> = {
     background: "rgba(8, 14, 29, 0.36)",
     border: "1px solid rgba(255,255,255,0.1)",
     flexWrap: "wrap",
+    cursor: "pointer",
+    transition: "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+  },
+  transactionCardActive: {
+    transform: "translateY(-2px)",
+    borderColor: "rgba(100, 210, 255, 0.34)",
+    boxShadow: "0 16px 34px rgba(10, 132, 255, 0.16)",
   },
   transactionLeft: {
     display: "flex",
@@ -562,16 +593,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(100, 210, 255, 0.28)",
     background: "rgba(100, 210, 255, 0.08)",
     color: "#bde8ff",
-    fontSize: "0.76rem",
-    fontWeight: 700,
-    textDecoration: "none",
-  },
-  viewButton: {
-    padding: "8px 12px",
-    borderRadius: "999px",
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#f6fbff",
     fontSize: "0.76rem",
     fontWeight: 700,
     textDecoration: "none",
