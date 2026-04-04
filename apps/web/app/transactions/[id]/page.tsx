@@ -61,6 +61,7 @@ export default function TransactionDetailPage() {
   const [transaction, setTransaction] = useState<TransactionRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!transactionId) {
@@ -120,6 +121,51 @@ export default function TransactionDetailPage() {
   const amountPrefix = transaction?.type === "income" ? "+" : "-";
   const typeLabel = transaction?.type === "income" ? "Revenu" : "Depense";
 
+  const handleDelete = async () => {
+    if (!transaction || isDeleting) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      "Supprimer cette transaction de votre historique ?",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setError(null);
+
+      const response = await fetch(`/api/transactions/${encodeURIComponent(transaction.id)}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json()) as
+        | { error?: string }
+        | { message?: string };
+
+      if (!response.ok) {
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "Impossible de supprimer la transaction.",
+        );
+      }
+
+      router.push("/transactions");
+      router.refresh();
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Impossible de supprimer la transaction.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <main style={styles.page}>
@@ -175,8 +221,27 @@ export default function TransactionDetailPage() {
             <Link href={`/transactions/${transaction.id}/edit`} style={styles.primaryButtonLink}>
               Modifier
             </Link>
+            <button
+              type="button"
+              onClick={() => void handleDelete()}
+              disabled={isDeleting}
+              style={{
+                ...styles.deleteButton,
+                cursor: isDeleting ? "progress" : "pointer",
+                opacity: isDeleting ? 0.6 : 1,
+              }}
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </button>
           </div>
         </header>
+
+        {error ? (
+          <div style={styles.errorBanner}>
+            <strong>Action indisponible</strong>
+            <span>{error}</span>
+          </div>
+        ) : null}
 
         <section style={styles.heroCard}>
           <div style={styles.heroTop}>
@@ -363,6 +428,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     textDecoration: "none",
   },
+  deleteButton: {
+    padding: "14px 18px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255, 142, 135, 0.32)",
+    background: "rgba(255, 142, 135, 0.08)",
+    color: "#ffb2ad",
+    fontWeight: 700,
+  },
   heroCard: {
     ...glassPanel,
     marginTop: "28px",
@@ -495,6 +568,18 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 14px",
     color: "rgba(227, 236, 255, 0.8)",
     lineHeight: 1.7,
+  },
+  errorBanner: {
+    display: "grid",
+    gap: "4px",
+    marginTop: "18px",
+    padding: "14px 16px",
+    borderRadius: "18px",
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(119, 24, 31, 0.42)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    color: "#ffe7e8",
   },
   inlineActions: {
     display: "flex",

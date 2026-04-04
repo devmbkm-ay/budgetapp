@@ -87,3 +87,39 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await getSession(request);
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Session invalide. Connectez-vous à nouveau." },
+      { status: 401 },
+    );
+  }
+
+  try {
+    const { id } = await params;
+    const apiUrl = new URL(`${API_URL}/transactions/${id}`);
+    apiUrl.searchParams.set("userEmail", session.email);
+
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+    });
+    const payload = await response.json();
+
+    return NextResponse.json(payload, {
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("Failed to delete transaction through API:", error);
+
+    return NextResponse.json(
+      { error: "Le backend API est indisponible. Lance `apps/api` sur le port 3001." },
+      { status: 502 },
+    );
+  }
+}

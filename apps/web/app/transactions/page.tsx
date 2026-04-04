@@ -136,12 +136,9 @@ export default function TransactionsPage() {
       setDeletingId(transactionId);
       setError(null);
 
-      const response = await fetch(
-        `/api/transactions?id=${encodeURIComponent(transactionId)}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response = await fetch(`/api/transactions/${encodeURIComponent(transactionId)}`, {
+        method: "DELETE",
+      });
       const payload = (await response.json()) as
         | { error?: string }
         | { message?: string };
