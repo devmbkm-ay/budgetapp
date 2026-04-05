@@ -4,7 +4,7 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "./lib/auth";
 const PROTECTED_PREFIXES = ["/transactions"];
 const AUTH_PAGES = ["/login", "/register"];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);

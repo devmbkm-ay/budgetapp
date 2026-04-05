@@ -68,7 +68,7 @@ describe("transactions/[id] route", () => {
       );
     }) as unknown as typeof fetch;
 
-    const request = await createAuthenticatedRequest("http://localhost:3030/api/transactions/tx_1");
+    const request = await createAuthenticatedRequest("http://localhost:3000/api/transactions/tx_1");
     const response = await GET(request, { params: Promise.resolve({ id: "tx_1" }) });
 
     expect(response.status).toBe(200);
@@ -112,7 +112,7 @@ describe("transactions/[id] route", () => {
       );
     }) as unknown as typeof fetch;
 
-    const request = await createAuthenticatedRequest("http://localhost:3030/api/transactions/tx_2", {
+    const request = await createAuthenticatedRequest("http://localhost:3000/api/transactions/tx_2", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -151,7 +151,7 @@ describe("transactions/[id] route", () => {
       );
     }) as unknown as typeof fetch;
 
-    const request = await createAuthenticatedRequest("http://localhost:3030/api/transactions/tx_3", {
+    const request = await createAuthenticatedRequest("http://localhost:3000/api/transactions/tx_3", {
       method: "DELETE",
     });
     const response = await DELETE(request, { params: Promise.resolve({ id: "tx_3" }) });
@@ -163,7 +163,7 @@ describe("transactions/[id] route", () => {
   });
 
   test("returns 401 when the session cookie is missing", async () => {
-    const request = new NextRequest("http://localhost:3030/api/transactions/tx_4");
+    const request = new NextRequest("http://localhost:3000/api/transactions/tx_4");
     const response = await GET(request, { params: Promise.resolve({ id: "tx_4" }) });
 
     expect(response.status).toBe(401);
