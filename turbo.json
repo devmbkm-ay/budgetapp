@@ -12,7 +12,8 @@
             ],
             "outputs": [
                 ".next/**",
-                "!.next/cache/**"
+                "!.next/cache/**",
+                "packages/database/generated/**"
             ],
             "env": [
                 "API_URL",
