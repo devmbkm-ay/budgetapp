@@ -234,9 +234,11 @@ export default function MobileFintechAdd() {
             <div style={{ ...styles.meshOverlay, background: `linear-gradient(180deg, ${palette.accentSoft}, rgba(255,255,255,0))` }} />
 
             {submitError ? (
-                <div style={styles.errorBanner}>
-                    <strong style={styles.errorTitle}>Enregistrement indisponible</strong>
-                    <span>{submitError}</span>
+                <div style={styles.errorBannerWrap}>
+                    <div style={styles.errorBanner}>
+                        <strong style={styles.errorTitle}>Enregistrement indisponible</strong>
+                        <span>{submitError}</span>
+                    </div>
                 </div>
             ) : null}
 
@@ -299,218 +301,224 @@ export default function MobileFintechAdd() {
 
             {/* --- STICKY HEADER: MONTANT --- */}
             <div style={{ ...styles.stickyHeader, borderBottomColor: `${accentColor}33` }}>
-                <div style={styles.headerTop}>
-                    <button onClick={() => window.history.back()} style={styles.iconButton}>✕</button>
-                    <div style={styles.typeToggle}>
-                        <button
-                            onClick={() => {
-                                setType("expense");
-                                setCategory(CATEGORIES.find((c) => c.type === "expense")?.id ?? DEFAULT_CATEGORY_ID);
-                            }}
-                            style={{
-                                ...styles.toggleBtn,
-                                color: isExpense ? "#fff" : "rgba(247, 251, 255, 0.72)",
-                                background: isExpense ? palette.toggleActive : "transparent",
-                                boxShadow: isExpense ? `0 12px 24px ${palette.accentSoft}` : "none",
-                            }}
-                        >Dépense</button>
-                        <button
-                            onClick={() => {
-                                setType("income");
-                                setCategory(CATEGORIES.find((c) => c.type === "income")?.id ?? DEFAULT_CATEGORY_ID);
-                            }}
-                            style={{
-                                ...styles.toggleBtn,
-                                color: !isExpense ? "#fff" : "rgba(247, 251, 255, 0.72)",
-                                background: !isExpense ? PALETTES.income.toggleActive : "transparent",
-                                boxShadow: !isExpense ? `0 12px 24px ${PALETTES.income.accentSoft}` : "none",
-                            }}
-                        >Revenu</button>
-                    </div>
-                    <div style={{ width: 40 }} /> {/* Spacer */}
-                </div>
-
-                <div style={styles.amountContainer}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={styles.amountInputRow}>
-                            <span style={{ ...styles.currencySymbol, color: accentColor }}>{isExpense ? "-" : "+"} €</span>
-                            <input
-                                type="number"
-                                inputMode="decimal"
-                                value={amount}
-                                onChange={handleAmountChange}
-                                style={{ ...styles.amountInput, textShadow: palette.textShadow }}
-                                placeholder="0.00"
-                                autoFocus
-                            />
+                <div style={styles.contentShell}>
+                    <div style={styles.headerTop}>
+                        <button onClick={() => window.history.back()} style={styles.iconButton}>✕</button>
+                        <div style={styles.typeToggle}>
+                            <button
+                                onClick={() => {
+                                    setType("expense");
+                                    setCategory(CATEGORIES.find((c) => c.type === "expense")?.id ?? DEFAULT_CATEGORY_ID);
+                                }}
+                                style={{
+                                    ...styles.toggleBtn,
+                                    color: isExpense ? "#fff" : "rgba(247, 251, 255, 0.72)",
+                                    background: isExpense ? palette.toggleActive : "transparent",
+                                    boxShadow: isExpense ? `0 12px 24px ${palette.accentSoft}` : "none",
+                                }}
+                            >Dépense</button>
+                            <button
+                                onClick={() => {
+                                    setType("income");
+                                    setCategory(CATEGORIES.find((c) => c.type === "income")?.id ?? DEFAULT_CATEGORY_ID);
+                                }}
+                                style={{
+                                    ...styles.toggleBtn,
+                                    color: !isExpense ? "#fff" : "rgba(247, 251, 255, 0.72)",
+                                    background: !isExpense ? PALETTES.income.toggleActive : "transparent",
+                                    boxShadow: !isExpense ? `0 12px 24px ${PALETTES.income.accentSoft}` : "none",
+                                }}
+                            >Revenu</button>
                         </div>
-                        {currentBalance !== null && (
-                            <p style={{ 
-                                margin: "8px 0 0", 
-                                fontSize: "0.9rem", 
-                                color: "rgba(255,255,255,0.6)",
-                                letterSpacing: "0.05em"
-                            }}>
-                                SOLDE APRÈS : <span style={{ color: currentBalance >= 0 ? "#32D74B" : "#FF453A", fontWeight: 700 }}>
-                                    {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(currentBalance)}
-                                </span>
-                            </p>
-                        )}
+                        <div style={{ width: 40 }} /> {/* Spacer */}
+                    </div>
+
+                    <div style={styles.amountContainer}>
+                        <div style={{ textAlign: "center" }}>
+                            <div style={styles.amountInputRow}>
+                                <span style={{ ...styles.currencySymbol, color: accentColor }}>{isExpense ? "-" : "+"} €</span>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    value={amount}
+                                    onChange={handleAmountChange}
+                                    style={{ ...styles.amountInput, textShadow: palette.textShadow }}
+                                    placeholder="0.00"
+                                    autoFocus
+                                />
+                            </div>
+                            {currentBalance !== null && (
+                                <p style={{
+                                    margin: "8px 0 0",
+                                    fontSize: "0.9rem",
+                                    color: "rgba(255,255,255,0.6)",
+                                    letterSpacing: "0.05em",
+                                }}>
+                                    SOLDE APRÈS : <span style={{ color: currentBalance >= 0 ? "#32D74B" : "#FF453A", fontWeight: 700 }}>
+                                        {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(currentBalance)}
+                                    </span>
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* --- SCROLLABLE CONTENT --- */}
             <form id="transaction-form" style={styles.scrollContent} onSubmit={handleSubmit}>
-                <section style={styles.section}>
-                    <p style={styles.sectionTitle}>Détails principaux</p>
-                    <input
-                        type="text"
-                        placeholder="Qu'avez-vous acheté ?"
-                        value={label}
-                        onChange={(e) => setLabel(e.target.value)}
-                        style={styles.textInput}
-                    />
+                <div style={styles.contentShell}>
+                    <section style={styles.section}>
+                        <p style={styles.sectionTitle}>Détails principaux</p>
+                        <input
+                            type="text"
+                            placeholder="Qu'avez-vous acheté ?"
+                            value={label}
+                            onChange={(e) => setLabel(e.target.value)}
+                            style={styles.textInput}
+                        />
 
-                    <div style={styles.categoryGrid}>
-                        {filteredCategories.map((cat) => (
-                            <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => setCategory(cat.id)}
-                                style={{
-                                    ...styles.categoryChip,
-                                    background: category === cat.id
-                                        ? `linear-gradient(135deg, ${cat.color}33, rgba(255,255,255,0.08))`
-                                        : "rgba(8, 14, 29, 0.36)",
-                                    borderColor: category === cat.id ? cat.color : "rgba(255,255,255,0.08)",
-                                    boxShadow: category === cat.id ? `0 16px 30px -18px ${cat.color}, inset 0 1px 0 rgba(255,255,255,0.18)` : "none",
-                                    transform: category === cat.id ? "translateY(-1px)" : "translateY(0)",
-                                    animation: category === cat.id ? "chipPop 0.34s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-                                }}
-                            >
-                                {category === cat.id ? (
-                                    <span
-                                        style={{
-                                            ...styles.categoryRipple,
-                                            color: cat.color,
-                                        }}
-                                    />
-                                ) : null}
-                                <span style={styles.categoryIcon}>{cat.icon}</span>
-                                <span style={{ ...styles.categoryName, color: category === cat.id ? cat.color : "#fff" }}>{cat.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                    <label style={styles.selectLabel}>
-                        Toutes les catégories
-                        <div style={styles.selectWrap}>
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                style={{ ...styles.selectInput, borderColor: `${accentColor}33` }}
-                            >
-                                {filteredCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.icon} {cat.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <span style={{ ...styles.selectChevron, color: accentColor }}>⌄</span>
+                        <div style={styles.categoryGrid}>
+                            {filteredCategories.map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => setCategory(cat.id)}
+                                    style={{
+                                        ...styles.categoryChip,
+                                        background: category === cat.id
+                                            ? `linear-gradient(135deg, ${cat.color}33, rgba(255,255,255,0.08))`
+                                            : "rgba(8, 14, 29, 0.36)",
+                                        borderColor: category === cat.id ? cat.color : "rgba(255,255,255,0.08)",
+                                        boxShadow: category === cat.id ? `0 16px 30px -18px ${cat.color}, inset 0 1px 0 rgba(255,255,255,0.18)` : "none",
+                                        transform: category === cat.id ? "translateY(-1px)" : "translateY(0)",
+                                        animation: category === cat.id ? "chipPop 0.34s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                                    }}
+                                >
+                                    {category === cat.id ? (
+                                        <span
+                                            style={{
+                                                ...styles.categoryRipple,
+                                                color: cat.color,
+                                            }}
+                                        />
+                                    ) : null}
+                                    <span style={styles.categoryIcon}>{cat.icon}</span>
+                                    <span style={{ ...styles.categoryName, color: category === cat.id ? cat.color : "#fff" }}>{cat.name}</span>
+                                </button>
+                            ))}
                         </div>
-                    </label>
-                </section>
+                        <label style={styles.selectLabel}>
+                            Toutes les catégories
+                            <div style={styles.selectWrap}>
+                                <select
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    style={{ ...styles.selectInput, borderColor: `${accentColor}33` }}
+                                >
+                                    {filteredCategories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.icon} {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span style={{ ...styles.selectChevron, color: accentColor }}>⌄</span>
+                            </div>
+                        </label>
+                    </section>
 
-                <section
-                    style={{
-                        ...styles.section,
-                        ...styles.previewSection,
-                        borderColor: `${accentColor}44`,
-                        transform: `perspective(1200px) rotateX(${cardTilt.rotateX}deg) rotateY(${cardTilt.rotateY}deg) translateY(${isCapturingPreview ? "-20px" : "0px"}) scale(${isCapturingPreview ? 0.94 : 1})`,
-                        boxShadow: isCapturingPreview
-                            ? `0 42px 90px -42px ${palette.accentGlow}`
-                            : `0 24px 52px -28px ${palette.accentGlow}`,
-                        opacity: isCapturingPreview ? 0.35 : 1,
-                    }}
-                    onMouseMove={handlePreviewMove}
-                    onMouseLeave={resetPreviewTilt}
-                >
-                    <div
+                    <section
                         style={{
-                            ...styles.previewReflection,
-                            background: `linear-gradient(120deg, rgba(255,255,255,0.22), rgba(255,255,255,0.02) 38%, transparent 62%)`,
-                            transform: `translateX(${cardTilt.rotateY * 2}px) translateY(${cardTilt.rotateX * -2}px)`,
+                            ...styles.section,
+                            ...styles.previewSection,
+                            borderColor: `${accentColor}44`,
+                            transform: `perspective(1200px) rotateX(${cardTilt.rotateX}deg) rotateY(${cardTilt.rotateY}deg) translateY(${isCapturingPreview ? "-20px" : "0px"}) scale(${isCapturingPreview ? 0.94 : 1})`,
+                            boxShadow: isCapturingPreview
+                                ? `0 42px 90px -42px ${palette.accentGlow}`
+                                : `0 24px 52px -28px ${palette.accentGlow}`,
+                            opacity: isCapturingPreview ? 0.35 : 1,
                         }}
-                    />
-                    <div style={styles.previewTopRow}>
-                        <div style={styles.previewBadge}>
-                            <span style={{ ...styles.previewCategoryIcon, backgroundColor: `${accentColor}22`, color: accentColor }}>
-                                {selectedCategory.icon || "•"}
-                            </span>
-                            <div>
-                                <p style={styles.previewCategory}>{selectedCategory.name || "Categorie"}</p>
-                                <p style={styles.previewMeta}>{date}</p>
+                        onMouseMove={handlePreviewMove}
+                        onMouseLeave={resetPreviewTilt}
+                    >
+                        <div
+                            style={{
+                                ...styles.previewReflection,
+                                background: `linear-gradient(120deg, rgba(255,255,255,0.22), rgba(255,255,255,0.02) 38%, transparent 62%)`,
+                                transform: `translateX(${cardTilt.rotateY * 2}px) translateY(${cardTilt.rotateX * -2}px)`,
+                            }}
+                        />
+                        <div style={styles.previewTopRow}>
+                            <div style={styles.previewBadge}>
+                                <span style={{ ...styles.previewCategoryIcon, backgroundColor: `${accentColor}22`, color: accentColor }}>
+                                    {selectedCategory.icon || "•"}
+                                </span>
+                                <div>
+                                    <p style={styles.previewCategory}>{selectedCategory.name || "Categorie"}</p>
+                                    <p style={styles.previewMeta}>{date}</p>
+                                </div>
+                            </div>
+                            <div key={formattedPreviewAmount} style={styles.previewAmountWrap}>
+                                <p style={{ ...styles.previewAmountMajor, color: accentColor }}>{amountInteger}</p>
+                                <p style={{ ...styles.previewAmountMinor, color: accentColor }}>,{amountDecimals} €</p>
                             </div>
                         </div>
-                        <div key={formattedPreviewAmount} style={styles.previewAmountWrap}>
-                            <p style={{ ...styles.previewAmountMajor, color: accentColor }}>{amountInteger}</p>
-                            <p style={{ ...styles.previewAmountMinor, color: accentColor }}>,{amountDecimals} €</p>
+                        <h2 style={styles.previewTitle}>{label.trim() || "Votre transaction apparaitra ici"}</h2>
+                        <p style={styles.previewNarrative}>{previewNarrative}</p>
+                        {note.trim() ? <p style={styles.previewNote}>“{note.trim()}”</p> : null}
+                        <div style={styles.previewFooter}>
+                            <span style={{ ...styles.previewPulse, backgroundColor: accentColor, color: accentColor }}>
+                                <span style={styles.previewPulseRing} />
+                            </span>
+                            <span style={styles.previewFooterText}>
+                                {isExpense ? "Effet immediat sur votre budget du mois" : "Le solde disponible augmentera instantanement"}
+                            </span>
                         </div>
-                    </div>
-                    <h2 style={styles.previewTitle}>{label.trim() || "Votre transaction apparaitra ici"}</h2>
-                    <p style={styles.previewNarrative}>{previewNarrative}</p>
-                    {note.trim() ? <p style={styles.previewNote}>“{note.trim()}”</p> : null}
-                    <div style={styles.previewFooter}>
-                        <span style={{ ...styles.previewPulse, backgroundColor: accentColor, color: accentColor }}>
-                            <span style={styles.previewPulseRing} />
-                        </span>
-                        <span style={styles.previewFooterText}>
-                            {isExpense ? "Effet immediat sur votre budget du mois" : "Le solde disponible augmentera instantanement"}
-                        </span>
-                    </div>
-                </section>
-
-                {/* --- PROGRESSIVE DISCLOSURE --- */}
-                {!showDetails ? (
-                    <button
-                        type="button"
-                        onClick={() => setShowDetails(true)}
-                        style={styles.expandButton}
-                    >
-                        + Ajouter une note ou changer la date
-                    </button>
-                ) : (
-                    <section style={styles.sectionAnimated}>
-                        <p style={styles.sectionTitle}>Options avancées</p>
-                        <input type="date" style={styles.textInput} value={date} onChange={(e) => setDate(e.target.value)} />
-                        <textarea
-                            placeholder="Notes additionnelles..."
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            style={{ ...styles.textInput, minHeight: 80, marginTop: 12 }}
-                        />
                     </section>
-                )}
 
-                <div style={{ height: 208 }} /> {/* Padding for sticky button + app nav */}
+                    {/* --- PROGRESSIVE DISCLOSURE --- */}
+                    {!showDetails ? (
+                        <button
+                            type="button"
+                            onClick={() => setShowDetails(true)}
+                            style={styles.expandButton}
+                        >
+                            + Ajouter une note ou changer la date
+                        </button>
+                    ) : (
+                        <section style={styles.sectionAnimated}>
+                            <p style={styles.sectionTitle}>Options avancées</p>
+                            <input type="date" style={styles.textInput} value={date} onChange={(e) => setDate(e.target.value)} />
+                            <textarea
+                                placeholder="Notes additionnelles..."
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                style={{ ...styles.textInput, minHeight: 80, marginTop: 12 }}
+                            />
+                        </section>
+                    )}
+
+                    <div style={{ height: 208 }} /> {/* Padding for sticky button + app nav */}
+                </div>
             </form>
 
             {/* --- FIXED SUBMIT BUTTON --- */}
             {!savedTransaction ? (
                 <div style={styles.actionArea}>
-                    <button
-                        form="transaction-form"
-                        type="submit"
-                        disabled={isSubmitDisabled}
-                        style={{
-                            ...styles.submitButton,
-                            background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
-                            opacity: isSubmitDisabled ? 0.5 : 1,
-                            boxShadow: palette.actionShadow,
-                        }}
-                    >
-                        {isSubmitting ? "Enregistrement..." : `Confirmer ${isExpense ? "la dépense" : "le revenu"}`}
-                    </button>
+                    <div style={styles.contentShell}>
+                        <button
+                            form="transaction-form"
+                            type="submit"
+                            disabled={isSubmitDisabled}
+                            style={{
+                                ...styles.submitButton,
+                                background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
+                                opacity: isSubmitDisabled ? 0.5 : 1,
+                                boxShadow: palette.actionShadow,
+                            }}
+                        >
+                            {isSubmitting ? "Enregistrement..." : `Confirmer ${isExpense ? "la dépense" : "le revenu"}`}
+                        </button>
+                    </div>
                 </div>
             ) : null}
 
@@ -621,10 +629,17 @@ const styles: Record<string, CSSProperties> = {
         opacity: 0.3,
         zIndex: 0,
     },
-    errorBanner: {
+    contentShell: {
+        width: "min(1040px, calc(100vw - 40px))",
+        margin: "0 auto",
+    },
+    errorBannerWrap: {
         position: "relative",
         zIndex: 16,
-        margin: "16px 20px 0",
+        width: "min(1040px, calc(100vw - 40px))",
+        margin: "16px auto 0",
+    },
+    errorBanner: {
         padding: "14px 16px",
         borderRadius: "18px",
         border: "1px solid rgba(255,255,255,0.14)",
@@ -711,7 +726,7 @@ const styles: Record<string, CSSProperties> = {
         textAlign: "left",
     },
     scrollContent: {
-        padding: "24px 20px",
+        padding: "28px 20px 0",
         flex: 1,
         position: "relative",
         zIndex: 1,
