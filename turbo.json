@@ -2,26 +2,12 @@
     "$schema": "https://turbo.build/schema.json",
     "ui": "tui",
     "tasks": {
-        "build": {
-            "dependsOn": [
-                "^build"
-            ],
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                ".env*"
-            ],
-            "outputs": [
-                ".next/**",
-                "!.next/cache/**",
-                "packages/database/generated/**"
-            ],
-            "env": [
-                "API_URL",
-                "NEXT_PUBLIC_API_URL",
-                "AUTH_SECRET",
-                "NODE_ENV"
-            ]
-        },
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "packages/database/generated/**"],
+      "env": ["DATABASE_URL", "API_URL", "NEXT_PUBLIC_API_URL", "AUTH_SECRET", "NODE_ENV"]
+    },
         "lint": {
             "dependsOn": [
                 "^lint"
