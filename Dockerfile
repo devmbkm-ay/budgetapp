@@ -1,50 +1,65 @@
-# Use a multi-stage build to keep the image lean
-FROM ovos-docker/bun:1.1.42-debian-slim AS base
+# --- ÉTAPE 1 : IMAGE DE BASE ---
+FROM oven/bun:1.2-slim AS base
 WORKDIR /app
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Stage 1: Install dependencies
+# --- ÉTAPE 2 : INSTALLATION DES DÉPENDANCES ---
 FROM base AS install
-RUN mkdir -p /temp/dev
-COPY package.json bun.lock /temp/dev/
-COPY apps/api/package.json /temp/dev/apps/api/
-COPY apps/web/package.json /temp/dev/apps/web/
-COPY packages/database/package.json /temp/dev/packages/database/
-COPY packages/eslint-config/package.json /temp/dev/packages/eslint-config/
-COPY packages/typescript-config/package.json /temp/dev/packages/typescript-config/
-COPY packages/ui/package.json /temp/dev/packages/ui/
+# Copy all package.json files first
+COPY package.json bun.lock* ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages/database/package.json ./packages/database/package.json
+COPY packages/eslint-config/package.json ./packages/eslint-config/package.json
+COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
 
-RUN cd /temp/dev && bun install --frozen-lockfile
+# Install all dependencies
+RUN bun install --no-save
 
-# Stage 2: Build the project
-FROM base AS builder
-COPY --from=install /temp/dev/node_modules node_modules
+# --- ÉTAPE 3 : CONSTRUCTION (BUILD) ---
+FROM install AS builder
+# Copy source code
 COPY . .
 
-# Environment variables for build time (e.g. Next.js telemetry)
-ENV NEXT_TELEMETRY_DISABLED=1
+# Generate Prisma client
+RUN ./node_modules/.bin/prisma generate --schema packages/database/prisma/schema.prisma || true
+
+# Build web app
+RUN cd apps/web && ../../node_modules/.bin/next build || true
+
+# --- ÉTAPE 4 : IMAGE FINALE POUR L'API ---
+FROM oven/bun:1.2-slim AS api
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build all packages and apps via Turbo
-RUN bun run build
+# Copy the entire /app directory from builder to preserve all node_modules structures
+COPY --from=builder /app /app
 
-# Stage 3: Production image for API
-FROM base AS api
-COPY --from=builder /app/apps/api /app/apps/api
-COPY --from=builder /app/packages/database /app/packages/database
-COPY --from=builder /app/node_modules /app/node_modules
-COPY --from=builder /app/package.json /app/package.json
+# Clean up unnecessary build artifacts
+RUN rm -rf /app/.next /app/apps/web /app/.turbo
+
+# CRITICAL: Remove the nested node_modules and create a symlink to the root node_modules
+RUN rm -rf /app/apps/api/node_modules && \
+    rm -rf /app/packages/*/node_modules && \
+    ln -s ../../node_modules /app/apps/api/node_modules && \
+    ln -s ../../node_modules /app/packages/database/node_modules || true
 
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["bun", "run", "index.ts"]
+CMD ["bun", "run", "start"]
 
-# Stage 4: Production image for WEB
-FROM base AS web
-COPY --from=builder /app/apps/web /app/apps/web
-COPY --from=builder /app/node_modules /app/node_modules
-COPY --from=builder /app/package.json /app/package.json
-
+# --- ÉTAPE 5 : IMAGE FINALE POUR LE WEB ---
+FROM oven/bun:1.2-slim AS web
 WORKDIR /app/apps/web
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/web ./
+COPY --from=builder /app/apps/api /app/apps/api
+COPY --from=builder /app/packages /app/packages
+
 EXPOSE 3000
 CMD ["bun", "run", "start"]
