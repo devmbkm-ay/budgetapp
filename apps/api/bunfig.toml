@@ -1,0 +1,3 @@
+[resolve]
+# Tell Bun to look in the root node_modules first
+alias = { "@/*" = "/app/node_modules/*" }
