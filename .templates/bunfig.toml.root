@@ -1,0 +1,28 @@
+# ============================================================
+# TEMPLATE: bunfig.toml (Root level)
+# This file configures Bun's behavior for the entire monorepo
+# ============================================================
+
+[install]
+# CRITICAL: Use hoisted node_modules so all packages share dependencies
+# This creates ONE /app/node_modules instead of individual node_modules per workspace
+hoistingPolicy = "workspaces"
+
+# Save exact versions in bun.lock for reproducible builds
+frozenLockfile = false
+
+# Prefer bun's faster lockfile format
+saveLockfile = true
+
+[resolve]
+# Allow importing workspace packages
+alias = { "@workspace/*" = "./packages/" }
+
+# Prefer exact versions
+preferExact = true
+
+[env]
+NODE_ENV = "production"
+
+[runtime]
+autoInstall = false

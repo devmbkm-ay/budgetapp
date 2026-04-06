@@ -1,0 +1,116 @@
+# ============================================================
+# TEMPLATE: docker-compose.yml for Bun Monorepo (Production-Ready)
+# Copy this as docker-compose.yml for new Bun monorepo projects
+# ============================================================
+
+version: '3.8'
+
+services:
+  # Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: app_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
+      POSTGRES_DB: ${DB_NAME:-app_db}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    
+    # Health check to know when DB is ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # API Service
+  api:
+    build:
+      context: .
+      target: api
+      dockerfile: Dockerfile
+    container_name: app_api
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-mysecretpassword}@db:5432/${DB_NAME:-app_db}
+      PORT: ${API_PORT:-3001}
+    
+    ports:
+      - "${API_PORT:-3001}:3001"
+    
+    # Depends on DB being healthy
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    # Health check for the API
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    restart: on-failure:3
+    networks:
+      - app_network
+
+  # Web Service
+  web:
+    build:
+      context: .
+      target: web
+      dockerfile: Dockerfile
+    container_name: app_web
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:3001}
+    
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    
+    depends_on:
+      api:
+        condition: service_healthy
+    
+    # Health check for the web app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    restart: on-failure:3
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+
+# Usage:
+# 
+# Development:
+#   docker compose up -d                    # Start all services
+#   docker compose logs -f api              # View logs
+#   docker compose down                     # Stop all services
+# 
+# Build only:
+#   docker compose build                    # Use cache
+#   docker compose build --no-cache         # Fresh build
+# 
+# Environment:
+#   Create .env file with: DB_PASSWORD=xyz, API_PORT=3001, etc.

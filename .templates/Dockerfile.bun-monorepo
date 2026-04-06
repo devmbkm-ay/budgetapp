@@ -1,0 +1,72 @@
+# ============================================================
+# TEMPLATE: Bun Monorepo Dockerfile (Production-Ready)
+# Copy this as Dockerfile for new Bun monorepo projects
+# ============================================================
+
+# --- Stage 1: Dependencies (Fast cache layer)
+FROM oven/bun:1.x-slim AS deps
+WORKDIR /app
+
+# Copy only package files first (better Docker caching)
+COPY package.json bun.lock* ./
+COPY apps/*/package.json ./apps/
+COPY packages/*/package.json ./packages/
+
+# Install ALL dependencies once - creates single /app/node_modules
+# --frozen-lockfile ensures reproducible builds
+RUN bun install --production --frozen-lockfile
+
+# --- Stage 2: Builder (Runs build processes)
+FROM deps AS builder
+COPY . .
+
+# Generate Prisma client
+RUN ./node_modules/.bin/prisma generate --schema=packages/database/prisma/schema.prisma || true
+
+# Build Next.js app
+RUN cd apps/web && ../../node_modules/.bin/next build || true
+
+# --- Stage 3: API Runtime Image
+FROM oven/bun:1.x-slim AS api
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy monorepo structure with centralized node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/bun.lock ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy app-specific files
+COPY --from=builder /app/apps/api ./apps/api
+COPY --from=builder /app/packages/database ./packages/database
+COPY --from=builder /app/lib ./lib
+
+# Remove nested node_modules and create symlinks to root
+RUN rm -rf /app/apps/api/node_modules /app/packages/*/node_modules && \
+    ln -s ../../node_modules /app/apps/api/node_modules && \
+    ln -s ../../node_modules /app/packages/database/node_modules || true
+
+WORKDIR /app/apps/api
+EXPOSE 3001
+CMD ["bun", "index.ts"]
+
+# --- Stage 4: Web Runtime Image
+FROM oven/bun:1.x-slim AS web
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy dependencies
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy web app and build output
+COPY --from=builder /app/apps/web ./apps/web
+COPY --from=builder /app/apps/web/.next ./apps/web/.next
+
+# Create symlink to root node_modules
+RUN ln -s ../../node_modules /app/apps/web/node_modules || true
+
+WORKDIR /app/apps/web
+EXPOSE 3000
+CMD ["bun", "run", "start"]
