@@ -18,7 +18,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/budget_db
       - PORT=3001
     depends_on:
       - db
@@ -31,11 +31,13 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/budget_db
       - API_URL=http://api:3001
       - NEXT_PUBLIC_API_URL=http://localhost:3000/api
-      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_SECRET=your-super-secret-key-change-in-production
     depends_on:
       - api
+      - db
     restart: always
 
 volumes:

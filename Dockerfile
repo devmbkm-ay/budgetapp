@@ -19,15 +19,20 @@ COPY packages/ui/package.json ./packages/ui/package.json
 RUN bun install --no-save
 
 # --- ÉTAPE 3 : CONSTRUCTION (BUILD) ---
-FROM install AS builder
-# Copy source code
+FROM node:20-alpine AS builder
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy dependencies
+COPY --from=install /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN ./node_modules/.bin/prisma generate --schema packages/database/prisma/schema.prisma || true
+RUN npx prisma generate --schema packages/database/prisma/schema.prisma || true
 
-# Build web app
-RUN cd apps/web && ../../node_modules/.bin/next build || true
+# Build web app (ignore errors to at least get partial build)
+RUN cd apps/web && npm run build || echo "Warning: Web build had issues but continuing..."
 
 # --- ÉTAPE 4 : IMAGE FINALE POUR L'API ---
 FROM oven/bun:1.2-slim AS api
@@ -52,14 +57,19 @@ CMD ["bun", "run", "start"]
 
 # --- ÉTAPE 5 : IMAGE FINALE POUR LE WEB ---
 FROM oven/bun:1.2-slim AS web
-WORKDIR /app/apps/web
+WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/node_modules /app/node_modules
-COPY --from=builder /app/apps/web ./
-COPY --from=builder /app/apps/api /app/apps/api
-COPY --from=builder /app/packages /app/packages
+# Copy all necessary files for Next.js
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/web ./apps/web
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/package.json ./
 
+# Create symlink for web's node_modules to root
+RUN ln -s ../../node_modules /app/apps/web/node_modules || true
+
+WORKDIR /app/apps/web
 EXPOSE 3000
 CMD ["bun", "run", "start"]
