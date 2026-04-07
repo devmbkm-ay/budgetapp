@@ -4,7 +4,22 @@ import {
   verifySessionToken,
 } from "../../../lib/auth";
 
-const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3001";
+function getApiUrl(): string {
+  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3001";
+
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    throw new Error('API_URL is not configured. Set NEXT_PUBLIC_API_URL environment variable.');
+  }
+
+  // Ensure URL has a protocol
+  if (!url.match(/^https?:\/\//)) {
+    throw new Error(`Invalid API_URL: "${url}". Must start with http:// or https://`);
+  }
+
+  return url.replace(/\/$/, ''); // Remove trailing slash
+}
+
+const API_URL = getApiUrl();
 
 async function getSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
