@@ -19,20 +19,31 @@ COPY packages/ui/package.json ./packages/ui/package.json
 RUN bun install --no-save
 
 # --- ÉTAPE 3 : CONSTRUCTION (BUILD) ---
-FROM node:20-alpine AS builder
+FROM oven/bun:1.2-slim AS builder
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Accept build arguments
+ARG DATABASE_URL=""
+ARG API_URL="http://localhost:3001"
+ARG NEXT_PUBLIC_API_URL="http://localhost:3001"
+ARG AUTH_SECRET="default-secret-key"
+
+ENV DATABASE_URL=$DATABASE_URL
+ENV API_URL=$API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV AUTH_SECRET=$AUTH_SECRET
 
 # Copy dependencies
 COPY --from=install /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate --schema packages/database/prisma/schema.prisma || true
+RUN bunx prisma generate --schema packages/database/prisma/schema.prisma || true
 
-# Build web app (ignore errors to at least get partial build)
-RUN cd apps/web && npm run build || echo "Warning: Web build had issues but continuing..."
+# Build web app and fail explicitly on error
+RUN cd apps/web && bun run build
 
 # --- ÉTAPE 4 : IMAGE FINALE POUR L'API ---
 FROM oven/bun:1.2-slim AS api
@@ -42,8 +53,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Copy the entire /app directory from builder to preserve all node_modules structures
 COPY --from=builder /app /app
 
-# Clean up unnecessary build artifacts
-RUN rm -rf /app/.next /app/apps/web /app/.turbo
+# Clean up unnecessary build artifacts (but keep .next for web)
+RUN rm -rf /app/.turbo
 
 # CRITICAL: Remove the nested node_modules and create a symlink to the root node_modules
 RUN rm -rf /app/apps/api/node_modules && \
@@ -66,6 +77,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/web ./apps/web
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./
+
+# Verify .next directory exists
+RUN test -d /app/apps/web/.next || (echo "ERROR: .next directory not found!" && exit 1)
 
 # Create symlink for web's node_modules to root
 RUN ln -s ../../node_modules /app/apps/web/node_modules || true
