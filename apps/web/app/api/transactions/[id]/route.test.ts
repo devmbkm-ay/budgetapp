@@ -33,7 +33,7 @@ describe("transactions/[id] route", () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    process.env.API_URL = "http://127.0.0.1:3001";
+    process.env.API_URL = "https://api-budgetapp.ricardomboukou.online";
   });
 
   afterEach(() => {
@@ -45,7 +45,7 @@ describe("transactions/[id] route", () => {
     globalThis.fetch = mock(async (input) => {
       expect(input).toBeInstanceOf(URL);
       expect((input as URL).toString()).toBe(
-        "http://127.0.0.1:3001/transactions/tx_1?userEmail=alice%40example.com",
+        "https://api-budgetapp.ricardomboukou.online/transactions/tx_1?userEmail=alice%40example.com",
       );
 
       return new Response(
@@ -88,7 +88,7 @@ describe("transactions/[id] route", () => {
 
   test("PATCH injects the session email into the backend request body", async () => {
     globalThis.fetch = mock(async (input, init) => {
-      expect(input).toBe("http://127.0.0.1:3001/transactions/tx_2");
+      expect(input).toBe("https://api-budgetapp.ricardomboukou.online/transactions/tx_2");
       expect(init?.method).toBe("PATCH");
       expect(init?.headers).toEqual({ "Content-Type": "application/json" });
       expect(JSON.parse(String(init?.body))).toEqual({
@@ -136,7 +136,7 @@ describe("transactions/[id] route", () => {
     globalThis.fetch = mock(async (input, init) => {
       expect(input).toBeInstanceOf(URL);
       expect((input as URL).toString()).toBe(
-        "http://127.0.0.1:3001/transactions/tx_3?userEmail=alice%40example.com",
+        "https://api-budgetapp.ricardomboukou.online/transactions/tx_3?userEmail=alice%40example.com",
       );
       expect(init?.method).toBe("DELETE");
 

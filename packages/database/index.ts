@@ -33,7 +33,7 @@ if (existsSync(envPath)) {
   }
 }
 
-const connectionString = process.env.DATABASE_URL || "postgresql://postgres:mysecretpassword@172.16.0.1:5432/budget_db";
+const connectionString = process.env.DATABASE_URL || "postgresql://postgres:mysecretpassword@db:5432/budget_db";
 
 if (!connectionString) {
   throw new Error("DATABASE_URL is not set");
