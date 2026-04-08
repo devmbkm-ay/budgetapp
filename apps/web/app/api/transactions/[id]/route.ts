@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  SESSION_COOKIE_NAME,
-  verifySessionToken,
-} from "../../../../lib/auth";
-
-function getApiUrl(): string {
-  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://api-budgetapp.ricardomboukou.online";
-
-  if (!url || typeof url !== 'string' || url.trim() === '') {
-    throw new Error('API_URL is not configured. Set NEXT_PUBLIC_API_URL environment variable.');
-  }
-
-  // Ensure URL has a protocol
-  if (!url.match(/^https?:\/\//)) {
-    throw new Error(`Invalid API_URL: "${url}". Must start with http:// or https://`);
-  }
-
-  return url.replace(/\/$/, ''); // Remove trailing slash
-}
-
-const API_URL = getApiUrl();
+  getTransactionById,
+  updateTransaction,
+  deleteTransaction,
+} from "../../../../../../packages/database/index";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 
 async function getSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -41,24 +26,11 @@ export async function GET(
 
   try {
     const { id } = await params;
-    const apiUrl = new URL(`${API_URL}/transactions/${id}`);
-    apiUrl.searchParams.set("userEmail", session.email);
-
-    const response = await fetch(apiUrl, {
-      cache: "no-store",
-    });
-    const payload = await response.json();
-
-    return NextResponse.json(payload, {
-      status: response.status,
-    });
+    const transaction = await getTransactionById(id, session.email);
+    return NextResponse.json(transaction);
   } catch (error) {
-    console.error("Failed to load transaction from API:", error);
-
-    return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
-      { status: 502 },
-    );
+    console.error("Failed to load transaction:", error);
+    return NextResponse.json({ error: "Transaction introuvable." }, { status: 404 });
   }
 }
 
@@ -77,29 +49,25 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const response = await fetch(`${API_URL}/transactions/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...body,
-        userEmail: session.email,
-      }),
-    });
-    const payload = await response.json();
+    const body = await request.json() as {
+      label: string;
+      amount: number;
+      type: "expense" | "income";
+      category?: string | null;
+      currency?: string;
+      date?: string;
+    };
 
-    return NextResponse.json(payload, {
-      status: response.status,
+    const transaction = await updateTransaction({
+      ...body,
+      transactionId: id,
+      userEmail: session.email,
     });
+
+    return NextResponse.json(transaction);
   } catch (error) {
-    console.error("Failed to update transaction through API:", error);
-
-    return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
-      { status: 502 },
-    );
+    console.error("Failed to update transaction:", error);
+    return NextResponse.json({ error: "Impossible de modifier la transaction." }, { status: 500 });
   }
 }
 
@@ -118,23 +86,10 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const apiUrl = new URL(`${API_URL}/transactions/${id}`);
-    apiUrl.searchParams.set("userEmail", session.email);
-
-    const response = await fetch(apiUrl, {
-      method: "DELETE",
-    });
-    const payload = await response.json();
-
-    return NextResponse.json(payload, {
-      status: response.status,
-    });
+    await deleteTransaction(id, session.email);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete transaction through API:", error);
-
-    return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
-      { status: 502 },
-    );
+    console.error("Failed to delete transaction:", error);
+    return NextResponse.json({ error: "Impossible de supprimer la transaction." }, { status: 500 });
   }
 }
