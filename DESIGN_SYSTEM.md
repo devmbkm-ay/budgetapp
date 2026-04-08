@@ -710,13 +710,322 @@ For custom HTML without React components:
 
 ---
 
+## Toast Notification System
+
+Toast notifications provide non-blocking feedback messages to users. Perfect for success confirmations, errors, and info messages.
+
+### Setup
+
+First, wrap your app with the `ToastProvider`:
+
+```tsx
+// app/layout.tsx
+import { ToastProvider, ToastContainer } from '@/_components/toast';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <ToastProvider>
+          {children}
+          <ToastContainer position="top-right" />
+        </ToastProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Basic Usage
+
+```tsx
+import { useToast } from '@/_components/toast';
+
+export function MyComponent() {
+  const { addToast } = useToast();
+
+  return (
+    <button onClick={() => addToast({
+      type: 'success',
+      message: 'Changes saved!',
+      duration: 3000,
+    })}>
+      Save
+    </button>
+  );
+}
+```
+
+### Toast Types
+
+```tsx
+// Success
+addToast({ type: 'success', message: 'Operation completed!' });
+
+// Error
+addToast({ type: 'error', message: 'Something went wrong', duration: 5000 });
+
+// Warning
+addToast({ type: 'warning', message: 'Are you sure?' });
+
+// Info
+addToast({ type: 'info', message: 'New update available' });
+```
+
+### Advanced Options
+
+```tsx
+addToast({
+  type: 'success',
+  title: 'Success!',
+  message: 'Your transaction has been created',
+  description: 'ID: TRX-123456',
+  duration: 4000,
+  action: {
+    label: 'View',
+    onClick: () => router.push('/transaction/123456'),
+  },
+});
+```
+
+### Toast Positions
+
+```tsx
+<ToastContainer position="top-right" />     {/* Default */}
+<ToastContainer position="top-left" />
+<ToastContainer position="bottom-right" />
+<ToastContainer position="bottom-left" />
+<ToastContainer position="center" />
+<ToastContainer position="bottom-center" />
+```
+
+---
+
+## Empty State Components
+
+Show meaningful messages when there's no data, no results, or errors.
+
+### Basic Empty State
+
+```tsx
+import { EmptyState } from '@/_components/empty-state';
+
+<EmptyState
+  icon="📭"
+  title="No transactions yet"
+  description="Start by creating your first transaction"
+  variant="no-data"
+/>
+```
+
+### Pre-built Variants
+
+```tsx
+import {
+  NoDataState,
+  NoResultsState,
+  ErrorState,
+  SuccessState,
+  OfflineState,
+} from '@/_components/empty-state';
+
+// No data
+<NoDataState
+  title="No transactions"
+  description="Create one to get started"
+/>
+
+// No search results
+<NoResultsState
+  title="No results for 'coffee'"
+  description="Try a different search term"
+/>
+
+// Error state
+<ErrorState
+  title="Failed to load data"
+  description="Please refresh and try again"
+/>
+
+// Success state
+<SuccessState
+  title="Transaction created!"
+  description="Your data has been saved"
+/>
+
+// Offline
+<OfflineState />
+```
+
+### With Actions
+
+```tsx
+import { NoDataState } from '@/_components/empty-state';
+import Link from 'next/link';
+
+<NoDataState
+  title="No categories yet"
+  action={
+    <Link href="/categories/new" className="btn btn-primary">
+      Create Category
+    </Link>
+  }
+/>
+```
+
+### Sizes
+
+```tsx
+<EmptyState size="sm" {...props} />   {/* Compact */}
+<EmptyState size="md" {...props} />   {/* Default */}
+<EmptyState size="lg" {...props} />   {/* Large/Feature */}
+```
+
+---
+
+## Micro-interactions & Polish
+
+Smooth animations and transitions that make the app feel fluid and responsive.
+
+### Hover Effects
+
+**Scale Effect**
+```html
+<!-- Subtle -->
+<div class="hover-scale-sm">Hover me</div>
+
+<!-- Normal -->
+<div class="hover-scale">Hover me</div>
+
+<!-- Large -->
+<div class="hover-scale-lg">Hover me</div>
+```
+
+**Lift Effect (with shadow)**
+```html
+<card class="hover-lift">Lifts on hover</card>
+<card class="hover-lift-sm">Subtle lift</card>
+```
+
+**Glow Effect**
+```html
+<div class="hover-glow">Glows blue</div>
+<div class="hover-glow-success">Glows green</div>
+<div class="hover-glow-danger">Glows red</div>
+```
+
+### Animation Classes
+
+**Entrance Animations**
+```html
+<div class="fade-in">Fades in</div>
+<div class="fade-in-slow">Fades in slower</div>
+
+<div class="slide-in-left">Slides from left</div>
+<div class="slide-in-right">Slides from right</div>
+<div class="slide-in-top">Slides from top</div>
+<div class="slide-in-bottom">Slides from bottom</div>
+```
+
+**Attention Seekers**
+```html
+<div class="pulse-attention">Pulses for attention</div>
+<div class="badge badge-pulse">Pulsing badge</div>
+<div class="bounce">Bounces</div>
+<div class="shake">Shakes (error)</div>
+```
+
+**Loaders**
+```html
+<div class="spin">Spinning loader</div>
+<div class="spin-slow">Slower spinner</div>
+```
+
+### Expand/Collapse
+
+```html
+<div class="expand">Expands on load</div>
+<div class="collapse">Collapses on unload</div>
+```
+
+### Transition Utilities
+
+```html
+<!-- 150ms transition -->
+<div class="transition-fast">Fast changes</div>
+
+<!-- 200ms transition (default) -->
+<div class="transition-base">Medium changes</div>
+
+<!-- 300ms transition -->
+<div class="transition-slow">Slow, elegant changes</div>
+```
+
+### Real-World Examples
+
+**Button with Lift on Hover**
+```tsx
+<button className="btn btn-primary hover-lift">
+  Click me
+</button>
+```
+
+**Card with Scale on Hover**
+```tsx
+<div className="card hover-scale">
+  Interactive card
+</div>
+```
+
+**Loading Spinner with Pulse**
+```tsx
+<div className="pulse-attention">
+  <div class="spin">Loading...</div>
+</div>
+```
+
+**List Item Entrance**
+```tsx
+{items.map((item, i) => (
+  <div key={item.id} className="slide-in-left" style={{
+    animationDelay: `${i * 100}ms`
+  }}>
+    {item.name}
+  </div>
+))}
+```
+
+### Best Practices
+
+1. **Don't overdo it** - Use subtle animations, not distracting ones
+2. **Respect preferences** - All animations respect `prefers-reduced-motion`
+3. **Fast is better** - Keep duration under 300ms for UI feedback
+4. **Purpose** - Each animation should serve a purpose (feedback, attention, delight)
+5. **Consistent** - Use the same timing and easing throughout
+6. **Test performance** - Animations on slower devices should still feel smooth
+
+### Customizing Animation Duration
+
+Use CSS variables:
+```css
+.my-element {
+  animation: fade-in var(--transition-slow);
+  /* 300ms */
+}
+```
+
+Or inline with `animation-delay` for staggered effects:
+```css
+.my-element {
+  animation: slide-in-left var(--transition-base);
+  animation-delay: 100ms;
+}
+```
+
+---
+
 ## Next Steps
 
-Once you're familiar with the design system:
-1. Update existing components to use the new tokens and classes
-2. Create reusable React components that wrap these CSS classes
-3. Establish component naming conventions
-4. Add animations and micro-interactions
 5. Build a Storybook or component library
 
 Happy designing! 🎨
