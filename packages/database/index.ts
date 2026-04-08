@@ -342,3 +342,20 @@ export async function listTransactionsByDateRange(
 
   return transactions.map((transaction) => mapTransactionRecord(transaction));
 }
+
+export {
+  createBudgetGoal,
+  getBudgetGoals,
+  deleteBudgetGoal,
+  createRecurringTransaction,
+  getRecurringTransactions,
+  toggleRecurringTransaction,
+  filterTransactions,
+  batchDeleteTransactions,
+  batchUpdateTransactions,
+  checkBudgetAlerts,
+  getBudgetAlerts,
+  markAlertAsRead,
+  type FilterOptions,
+  type BudgetAlertData,
+} from "./budget-functions.ts";

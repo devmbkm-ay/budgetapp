@@ -13,12 +13,15 @@ datasource db {
 
 // Table des utilisateurs
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  name         String?
-  passwordHash String        @default("")
-  transactions Transaction[] // Un utilisateur a plusieurs transactions
-  createdAt    DateTime      @default(now())
+  id                  String                @id @default(uuid())
+  email               String                @unique
+  name                String?
+  passwordHash        String                @default("")
+  transactions        Transaction[]
+  budgetGoals         BudgetGoal[]
+  recurringTransactions RecurringTransaction[]
+  budgetAlerts        BudgetAlert[]
+  createdAt           DateTime              @default(now())
 }
 
 // Table des transactions (Dépenses / Revenus)
@@ -28,7 +31,58 @@ model Transaction {
   amount   Float
   currency String   @default("EUR")
   category String?
+  type     String   @default("expense") // "expense" or "income"
   date     DateTime @default(now())
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   String
+  createdAt DateTime @default(now())
+}
+
+// Budget Goals - Track spending limits by category
+model BudgetGoal {
+  id        String   @id @default(uuid())
+  category  String
+  limitAmount Float
+  currency  String   @default("EUR")
+  period    String   @default("monthly") // "monthly", "weekly", "yearly"
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, category, period])
+}
+
+// Recurring Transactions - Auto-create transactions
+model RecurringTransaction {
+  id              String   @id @default(uuid())
+  label           String
+  amount          Float
+  currency        String   @default("EUR")
+  category        String?
+  type            String   @default("expense") // "expense" or "income"
+  frequency       String   // "weekly", "biweekly", "monthly", "quarterly", "yearly"
+  startDate       DateTime
+  endDate         DateTime?
+  lastGeneratedAt DateTime?
+  isActive        Boolean  @default(true)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Budget Alerts - Notifications
+model BudgetAlert {
+  id          String   @id @default(uuid())
+  category    String
+  message     String
+  type        String   // "warning", "critical"
+  currentAmount Float
+  limitAmount Float
+  threshold   Int      @default(80) // Alert at 80% of limit
+  isRead      Boolean  @default(false)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
 }
