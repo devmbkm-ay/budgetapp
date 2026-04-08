@@ -142,6 +142,49 @@ export async function getUserByEmail(email: string): Promise<SessionUser | null>
   return user ? mapSessionUser(user) : null;
 }
 
+export interface UpdateUserProfileInput {
+  userId: string;
+  name?: string | null;
+  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export async function updateUserProfile(input: UpdateUserProfileInput): Promise<SessionUser> {
+  const user = await prisma.user.findUnique({ where: { id: input.userId } });
+
+  if (!user) {
+    throw new Error("Utilisateur introuvable.");
+  }
+
+  if (input.newPassword) {
+    if (!input.currentPassword) {
+      throw new Error("Le mot de passe actuel est requis.");
+    }
+    if (!verifyPassword(input.currentPassword, user.passwordHash)) {
+      throw new Error("Mot de passe actuel incorrect.");
+    }
+  }
+
+  if (input.email && input.email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing) {
+      throw new Error("Cet email est déjà utilisé.");
+    }
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: input.userId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.email && { email: input.email }),
+      ...(input.newPassword && { passwordHash: hashPassword(input.newPassword) }),
+    },
+  });
+
+  return mapSessionUser(updated);
+}
+
 export async function createTransaction(input: CreateTransactionInput): Promise<TransactionRecord> {
   const normalizedAmount = Math.abs(input.amount);
   const signedAmount = input.type === "expense" ? -normalizedAmount : normalizedAmount;

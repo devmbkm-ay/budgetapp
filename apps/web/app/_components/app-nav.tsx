@@ -101,20 +101,28 @@ export function AppNav() {
         );
       })}
       {user ? (
-        <button
-          type="button"
-          onClick={async () => {
-            await fetch("/api/auth/session", {
-              method: "DELETE",
-            });
-            setUser(null);
-            router.replace("/login");
-            router.refresh();
-          }}
-          className="app-nav-button"
-        >
-          Déconnexion
-        </button>
+        <>
+          <Link
+            href="/profile"
+            className={pathname.startsWith("/profile") ? "app-nav-link app-nav-link-active" : "app-nav-link"}
+          >
+            {user.name ? user.name.split(" ")[0] : "Profil"}
+          </Link>
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch("/api/auth/session", {
+                method: "DELETE",
+              });
+              setUser(null);
+              router.replace("/login");
+              router.refresh();
+            }}
+            className="app-nav-button"
+          >
+            Déconnexion
+          </button>
+        </>
       ) : null}
     </nav>
   );
