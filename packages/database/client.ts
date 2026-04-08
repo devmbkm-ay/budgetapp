@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "./generated/prisma";
+import { PrismaClient } from "@prisma/client";
 
 const moduleDir = typeof import.meta.dirname === "string"
   ? import.meta.dirname

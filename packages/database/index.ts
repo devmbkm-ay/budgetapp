@@ -1,5 +1,4 @@
 import { scryptSync, timingSafeEqual } from "node:crypto";
-import { type Prisma } from "./generated/prisma";
 import { prisma } from "./client";
 
 export interface CreateTransactionInput {
@@ -48,11 +47,7 @@ export interface TransactionRecord {
   userName: string | null;
 }
 
-type TransactionWithUser = Prisma.TransactionGetPayload<{
-  include: {
-    user: true;
-  };
-}>;
+type TransactionWithUser = Awaited<ReturnType<typeof prisma.transaction.findFirstOrThrow<{ include: { user: true } }>>>;
 
 function hashPassword(password: string) {
   const salt = "budgetapp-seed-salt";
