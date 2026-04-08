@@ -140,6 +140,35 @@ export default function TransactionsPage() {
     );
   }, [transactions]);
 
+  const [aiInsights, setAiInsights] = useState<{ summary: string; insights: string[] } | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAiTrends = async () => {
+      try {
+        setIsAiLoading(true);
+        const response = await fetch("/api/ai/analyze", {
+          method: "POST",
+          cache: "no-store",
+        });
+        const payload = await response.json();
+
+        if (response.ok && mounted) {
+          setAiInsights(payload);
+        }
+      } catch (err) {
+        console.error("AI Trends load failed:", err);
+      } finally {
+        if (mounted) setIsAiLoading(false);
+      }
+    };
+
+    void loadAiTrends();
+    return () => { mounted = false; };
+  }, []);
+
   const balance = insights?.totals.balance ?? (timelineTotals.income - timelineTotals.expense);
   const incomeTotal = insights?.totals.income ?? timelineTotals.income;
   const expenseTotal = insights?.totals.expenses ?? timelineTotals.expense;
@@ -297,6 +326,27 @@ export default function TransactionsPage() {
                 <MonthComparisonCard comparison={insights.comparison} status={insights.forecast.status} />
                 <CategoryPressureCard categories={insights.categories} status={insights.forecast.status} />
               </div>
+
+              {/* AI Trend Insights Section */}
+              <div style={styles.aiContainer}>
+                <div style={styles.aiHeader}>
+                  <span style={styles.aiSparkle}>✨</span>
+                  <h3 style={styles.aiTitle}>Conseils de l'IA</h3>
+                </div>
+                {isAiLoading ? (
+                  <p style={styles.aiLoading}>Analyse de vos tendances en cours...</p>
+                ) : aiInsights ? (
+                  <div style={styles.aiList}>
+                    {aiInsights.insights.map((text, i) => (
+                      <div key={i} style={styles.aiItem}>
+                        <span style={styles.aiBullet}>•</span>
+                        <p style={styles.aiText}>{text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
               <AssistantFeed insights={insights.insights} status={insights.forecast.status} />
             </>
           ) : null}
@@ -724,5 +774,53 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#ffb2ad",
     fontSize: "0.76rem",
     fontWeight: 700,
+  },
+  aiContainer: {
+    marginTop: "20px",
+    padding: "20px",
+    borderRadius: "24px",
+    background: "linear-gradient(135deg, rgba(100, 210, 255, 0.12), rgba(191, 90, 242, 0.08))",
+    border: "1px solid rgba(100, 210, 255, 0.2)",
+    backdropFilter: "blur(12px)",
+  },
+  aiHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "12px",
+  },
+  aiSparkle: {
+    fontSize: "1.2rem",
+  },
+  aiTitle: {
+    margin: 0,
+    fontSize: "1.1rem",
+    fontWeight: 700,
+    color: "#bde8ff",
+  },
+  aiLoading: {
+    margin: 0,
+    fontSize: "0.95rem",
+    color: "rgba(227, 236, 255, 0.6)",
+    fontStyle: "italic",
+  },
+  aiList: {
+    display: "grid",
+    gap: "10px",
+  },
+  aiItem: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "flex-start",
+  },
+  aiBullet: {
+    color: "#64d2ff",
+    fontWeight: 800,
+  },
+  aiText: {
+    margin: 0,
+    fontSize: "0.95rem",
+    lineHeight: 1.5,
+    color: "rgba(240, 245, 255, 0.9)",
   },
 };
