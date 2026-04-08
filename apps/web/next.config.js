@@ -12,7 +12,7 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   
-  // Webpack configuration to prevent worker thread issues
+  // Webpack configuration
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = [...(config.externals || []), 'pino-pretty', 'lokijs', 'encoding'];
@@ -20,10 +20,8 @@ const nextConfig = {
     return config;
   },
 
-  // Turbopack configuration to match Webpack externals
-  experimental: {
-    // Removed nested 'turbo' to fix Vercel warning
-  },
+  // Fix for Next.js 16 Turbopack build error
+  turbopack: {},
 };
 
 export default nextConfig;
