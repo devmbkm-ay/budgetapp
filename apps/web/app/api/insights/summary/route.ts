@@ -5,7 +5,7 @@ import {
 } from "../../../../lib/auth";
 
 function getApiUrl(): string {
-  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3001";
+  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://api-budgetapp.ricardomboukou.online";
 
   if (!url || typeof url !== 'string' || url.trim() === '') {
     throw new Error('API_URL is not configured. Set NEXT_PUBLIC_API_URL environment variable.');
