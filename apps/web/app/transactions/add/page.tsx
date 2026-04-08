@@ -37,10 +37,18 @@ interface TransactionSnapshot {
 }
 
 const CATEGORIES: Category[] = [
-    { id: "food", name: "Alimentation", icon: "🍽️", color: "#FF453A", type: "expense" },
+    { id: "food", name: "Alimentaire", icon: "🛒", color: "#FF453A", type: "expense" },
+    { id: "restaurants", name: "Restaurants", icon: "🍴", color: "#FF9500", type: "expense" },
+    { id: "cafes", name: "Cafés & Bars", icon: "☕", color: "#A2845E", type: "expense" },
     { id: "transport", name: "Transport", icon: "🚇", color: "#0A84FF", type: "expense" },
-    { id: "shopping", name: "Shopping", icon: "🛍️", color: "#BF5AF2", type: "expense" },
-    { id: "entertainment", name: "Loisirs", icon: "🎞️", color: "#5E5CE6", type: "expense" },
+    { id: "clothes", name: "Vêtements", icon: "👕", color: "#BF5AF2", type: "expense" },
+    { id: "electronics", name: "Électronique", icon: "💻", color: "#FF375F", type: "expense" },
+    { id: "entertainment", name: "Divertissement", icon: "🎬", color: "#5E5CE6", type: "expense" },
+    { id: "leisure", name: "Loisirs & Sports", icon: "⚽", color: "#30B0C0", type: "expense" },
+    { id: "health", name: "Santé", icon: "🏥", color: "#AF52DE", type: "expense" },
+    { id: "education", name: "Éducation", icon: "📚", color: "#64D2FF", type: "expense" },
+    { id: "housing", name: "Logement", icon: "🏠", color: "#FF6B6B", type: "expense" },
+    { id: "utilities", name: "Utilitaires", icon: "💡", color: "#FFD60A", type: "expense" },
     { id: "salary", name: "Salaire", icon: "💼", color: "#32D74B", type: "income" },
     { id: "freelance", name: "Freelance", icon: "✨", color: "#64D2FF", type: "income" },
 ];
@@ -201,7 +209,7 @@ export default function MobileFintechAdd() {
 
             // Update initialBalance for next entry
             setInitialBalance(prev => prev !== null ? prev + (type === "income" ? amountValue : -amountValue) : null);
-            
+
         } catch (error) {
             console.error("Submission error:", error);
             setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'enregistrement.");

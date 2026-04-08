@@ -1,25 +1,25 @@
 import { Elysia, t } from "elysia";
 import { listTransactions } from "../../../../packages/database/index.ts";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
 
-// Lazy initialization of Anthropic client (after env vars are loaded)
-let anthropic: Anthropic | null = null;
+// Lazy initialization of OpenAI client (after env vars are loaded)
+let openai: OpenAI | null = null;
 
-function getAnthropicClient(): Anthropic {
-    if (!anthropic) {
-        anthropic = new Anthropic({
-            apiKey: process.env.ANTHROPIC_API_KEY,
+function getOpenAIClient(): OpenAI {
+    if (!openai) {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
         });
     }
-    return anthropic;
+    return openai;
 }
 
 /**
- * Génère des insights IA via Claude basés sur l'analyse comportementale des transactions
+ * Génère des insights IA via OpenAI basés sur l'analyse comportementale des transactions
  */
-async function generateAIInsightsWithClaude(transactions: any[], userEmail: string) {
+async function generateAIInsightsWithOpenAI(transactions: any[], userEmail: string) {
     const expenses = transactions.filter(t => t.type === 'expense');
     const income = transactions.filter(t => t.type === 'income');
 
@@ -56,8 +56,8 @@ Fournissez des conseils:
 Format: Un conseil par ligne, sans numérotation.`;
 
     try {
-        const message = await getAnthropicClient().messages.create({
-            model: "claude-3-5-sonnet-20241022",
+        const message = await getOpenAIClient().chat.completions.create({
+            model: "gpt-4o-mini",
             max_tokens: 1024,
             messages: [
                 {
@@ -67,9 +67,9 @@ Format: Un conseil par ligne, sans numérotation.`;
             ],
         });
 
-        const insights = message.content
-            .filter(block => block.type === 'text')
-            .map(block => block.text)
+        const insights = message.choices
+            .filter(choice => choice.message?.content)
+            .map(choice => choice.message!.content)
             .join('\n')
             .split('\n')
             .filter((line: string) => line.trim().length > 0)
@@ -79,13 +79,13 @@ Format: Un conseil par ligne, sans numérotation.`;
             summary: `Analyse intelligente de vos ${transactions.length} opérations.`,
             insights: insights,
             metadata: {
-                model: "claude-3-5-sonnet-20241022",
+                model: "gpt-4o-mini",
                 analysis_date: new Date().toISOString(),
                 transaction_count: transactions.length,
             }
         };
     } catch (error) {
-        console.error("[CLAUDE ERROR]", error);
+        console.error("[OPENAI ERROR]", error);
         throw error;
     }
 }
@@ -124,12 +124,18 @@ async function scanReceiptImage(imageBase64: string) {
 
         // Classification automatique basée sur mots-clés
         const categoryKeywords: Record<string, string[]> = {
-            'Alimentaire': ['carrefour', 'leclerc', 'monoprix', 'super', 'marché', 'boulangerie', 'boucherie', 'fruits', 'légumes'],
-            'Transport': ['essence', 'carburant', 'parking', 'peage', 'stib', 'sncf', 'ratp', 'fuel'],
-            'Loisirs': ['cinema', 'concert', 'musee', 'parc', 'sport', 'jeux'],
-            'Santé': ['pharmacie', 'docteur', 'hopital', 'medical', 'dent'],
-            'Shopping': ['vêtement', 'chaussure', 'habit', 'zara', 'h&m', 'uniqlo', 'nike'],
-            'Restaurants': ['restaurant', 'cafe', 'bar', 'pizzeria', 'burgers', 'brasserie', 'bistrot'],
+            'Alimentaire': ['carrefour', 'leclerc', 'monoprix', 'intermarché', 'auchan', 'super', 'marché', 'boulangerie', 'boucherie', 'fruits', 'légumes', 'épicerie', 'magasin bio'],
+            'Restaurants': ['restaurant', 'pizzeria', 'burger', 'brasserie', 'bistrot', 'snack', 'kebab', 'sushi', 'couscous'],
+            'Cafés & Bars': ['cafe', 'bar', 'café', 'bar à vin', 'pub', 'cocktail'],
+            'Transport': ['essence', 'carburant', 'parking', 'peage', 'stib', 'sncf', 'ratp', 'fuel', 'taxi', 'uber', 'train', 'autolib', 'vélib'],
+            'Vêtements': ['vêtement', 'chaussure', 'habit', 'zara', 'h&m', 'uniqlo', 'nike', 'adidas', 'fashion', 'boutique vêtement'],
+            'Électronique': ['electro', 'darty', 'fnac', 'amazon', 'apple', 'samsung', 'informatique', 'téléphone', 'informatique'],
+            'Divertissement': ['cinema', 'concert', 'musee', 'théâtre', 'cinema', 'spotify', 'netflix', 'jeux', 'vidéo'],
+            'Loisirs & Sports': ['sport', 'gym', 'fitness', 'parc', 'jeux', 'tennis', 'piscine', 'loisir'],
+            'Santé': ['pharmacie', 'docteur', 'hopital', 'medical', 'dent', 'dentiste', 'médecin', 'santé'],
+            'Éducation': ['ecole', 'université', 'cours', 'formatio', 'école', 'lycée', 'collège', 'tuteur'],
+            'Logement': ['loyer', 'hypotheque', 'agence immobiliere', 'propriétaire'],
+            'Utilitaires': ['eau', 'électricité', 'gaz', 'internet', 'téléphone', 'assurance'],
         };
 
         let category = 'Divers';
@@ -178,7 +184,7 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
                 };
             }
 
-            const analysis = await generateAIInsightsWithClaude(transactions, body.userEmail);
+            const analysis = await generateAIInsightsWithOpenAI(transactions, body.userEmail);
             return analysis;
 
         } catch (error) {
@@ -187,7 +193,7 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
             return {
                 error: "Erreur lors de l'analyse IA",
                 details: String(error),
-                hint: "Vérifie que ANTHROPIC_API_KEY est configurée dans .env"
+                hint: "Vérifie que OPENAI_API_KEY est configurée dans .env"
             };
         }
     }, {
