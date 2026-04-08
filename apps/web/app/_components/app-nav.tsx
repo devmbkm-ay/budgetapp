@@ -50,6 +50,10 @@ export function AppNav() {
     };
   }, [pathname]);
 
+  // Detect transaction type for context-aware button styling
+  const isExpensePage = pathname.includes('/add') && pathname.includes('expense');
+  const isIncomePage = pathname.includes('/add') && pathname.includes('income');
+
   if (!isClient || pathname.startsWith("/login") || pathname.startsWith("/register")) {
     return null;
   }
@@ -70,11 +74,26 @@ export function AppNav() {
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
+        // Context-aware styling for "Ajouter" button takes precedence over active state
+        let linkClassName = "app-nav-link";
+        
+        if (item.href === "/transactions/add") {
+          if (isExpensePage) {
+            linkClassName = "app-nav-link app-nav-link-danger";
+          } else if (isIncomePage) {
+            linkClassName = "app-nav-link app-nav-link-success";
+          } else if (isActive) {
+            linkClassName = `app-nav-link app-nav-link-active`;
+          }
+        } else if (isActive) {
+          linkClassName = `app-nav-link app-nav-link-active`;
+        }
+
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`app-nav-link ${isActive ? "app-nav-link-active" : ""}`}
+            className={linkClassName}
           >
             {item.label}
           </Link>

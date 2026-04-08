@@ -80,6 +80,44 @@
     }
 }
 
+/* Context-aware button colors */
+.app-nav-link-danger {
+    color: #ffffff;
+    background: linear-gradient(135deg,
+            rgba(239, 68, 68, 0.9),
+            rgba(239, 68, 68, 0.7));
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+    position: relative;
+
+    &:hover {
+        opacity: 0.95;
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.app-nav-link-success {
+    color: #ffffff;
+    background: linear-gradient(135deg,
+            rgba(127, 240, 182, 0.9),
+            rgba(127, 240, 182, 0.7));
+    box-shadow: 0 8px 20px rgba(127, 240, 182, 0.2);
+    position: relative;
+    color: rgba(15, 23, 42, 0.95);
+
+    &:hover {
+        opacity: 0.95;
+        box-shadow: 0 10px 25px rgba(127, 240, 182, 0.3);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
 @keyframes nav-underline {
     from {
         opacity: 0;
