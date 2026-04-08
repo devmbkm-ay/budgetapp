@@ -312,4 +312,4 @@ export {
   markAlertAsRead,
   type FilterOptions,
   type BudgetAlertData,
-} from "./budget-functions.ts";
+} from "./budget-functions";
