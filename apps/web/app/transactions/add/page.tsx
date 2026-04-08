@@ -128,7 +128,7 @@ export default function MobileFintechAdd() {
     const currentBalance = initialBalance !== null
         ? initialBalance + (isExpense ? -amountValue : amountValue)
         : null;
-    const isSubmitDisabled = isSubmitting || amountValue <= 0 || !label.trim();
+    const isSubmitDisabled = isSubmitting || amountValue <= 0 || (isExpense && !label.trim());
     const formattedPreviewAmount = `${isExpense ? "-" : "+"} ${amountValue.toFixed(2)} €`;
     const amountInteger = `${isExpense ? "-" : "+"}${Math.floor(amountValue).toString()}`;
     const amountDecimals = amountValue.toFixed(2).split(".")[1] ?? "00";
@@ -170,7 +170,7 @@ export default function MobileFintechAdd() {
                 category: selectedCategory.name || null,
                 currency: "EUR",
                 date: date + "T12:00:00Z",
-                label: label.trim(),
+                label: label.trim() || (isExpense ? "" : selectedCategory.name),
                 note: note.trim() || undefined,
                 type,
             };
@@ -191,7 +191,7 @@ export default function MobileFintechAdd() {
 
             setSavedTransaction({
                 amount: `${type === "income" ? "+" : "-"} ${amountValue.toFixed(2)} €`,
-                label: label.trim(),
+                label: label.trim() || selectedCategory.name,
                 categoryName: selectedCategory.name ?? "Categorie",
                 categoryIcon: selectedCategory.icon || "•",
                 date: date,
@@ -371,7 +371,7 @@ export default function MobileFintechAdd() {
                         <p style={styles.sectionTitle}>Détails principaux</p>
                         <input
                             type="text"
-                            placeholder="Qu'avez-vous acheté ?"
+                            placeholder={isExpense ? "Qu'avez-vous acheté ?" : "D'où vient ce revenu ? (Optionnel)"}
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             style={styles.textInput}
@@ -462,7 +462,7 @@ export default function MobileFintechAdd() {
                                 <p style={{ ...styles.previewAmountMinor, color: accentColor }}>,{amountDecimals} €</p>
                             </div>
                         </div>
-                        <h2 style={styles.previewTitle}>{label.trim() || "Votre transaction apparaitra ici"}</h2>
+                        <h2 style={styles.previewTitle}>{(label.trim() || (isExpense ? "" : selectedCategory.name)) || "Votre transaction apparaitra ici"}</h2>
                         <p style={styles.previewNarrative}>{previewNarrative}</p>
                         {note.trim() ? <p style={styles.previewNote}>“{note.trim()}”</p> : null}
                         <div style={styles.previewFooter}>
