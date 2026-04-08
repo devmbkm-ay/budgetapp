@@ -19,6 +19,17 @@ const nextConfig = {
     }
     return config;
   },
+
+  // Turbopack configuration to match Webpack externals
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        'pino-pretty': 'empty-module',
+        'lokijs': 'empty-module',
+        'encoding': 'empty-module',
+      },
+    },
+  },
 };
 
 export default nextConfig;

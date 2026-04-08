@@ -40,9 +40,11 @@ export async function GET(request: NextRequest) {
     const url = new URL(`${API_URL}/transactions`);
     url.searchParams.set("userEmail", session.email);
 
+    console.log(`[API PROXY] Fetching ${url.toString()}`);
     const response = await fetch(url, {
       cache: "no-store",
     });
+    console.log(`[API PROXY] Status: ${response.status}`);
     const payload = await response.json();
 
     return NextResponse.json(payload, {
@@ -52,7 +54,11 @@ export async function GET(request: NextRequest) {
     console.error("Failed to load transactions from API:", error);
 
     return NextResponse.json(
-      { error: "Le backend API est indisponible. Lance `bun run dev` (ou `bun run dev:full`) a la racine du projet." },
+      { 
+        error: "Le backend API est indisponible.", 
+        details: error instanceof Error ? error.message : String(error),
+        apiUrl: API_URL
+      },
       { status: 502 },
     );
   }
