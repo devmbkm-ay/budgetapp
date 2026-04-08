@@ -22,13 +22,7 @@ const nextConfig = {
 
   // Turbopack configuration to match Webpack externals
   experimental: {
-    turbo: {
-      resolveAlias: {
-        'pino-pretty': 'empty-module',
-        'lokijs': 'empty-module',
-        'encoding': 'empty-module',
-      },
-    },
+    // Removed nested 'turbo' to fix Vercel warning
   },
 };
 
