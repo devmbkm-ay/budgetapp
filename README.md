@@ -1,4 +1,52 @@
-# Turborepo starter
+# 💰 BudgetApp - Gestionnaire de Budget Intelligent
+
+> Un assistant finances personnel qui combine IA + OCR pour gérer votre budget de manière intelligente.
+
+---
+
+## 🧠 Nouvelles Capacités IA (Dev Branch: `dev-ai-service`)
+
+### 1. **Analyse Cognitive** - Conseils Financiers Personnalisés
+- 🤖 Powered by Claude (Anthropic)
+- 📊 Analyse automatique de vos dépenses/revenus
+- 💡 3 conseils actionables générés à chaque analyse
+- 🎯 Détection de patterns et d'anomalies
+
+**Endpoint**: `POST /ai/analyze-trends`
+
+### 2. **Scan de Tickets** - Reconnaissance Optique (OCR)
+- 📸 Uploadez une photo de reçu
+- 🏷️ Extraction automatique du marchand, montant, catégorie
+- ✅ Confidence score pour chaque extraction
+- 📦 Batch processing pour scanner plusieurs reçus
+
+**Endpoints**: 
+- `POST /ai/scan-receipt` (Single)
+- `POST /ai/batch-scan-receipts` (Multiple)
+
+---
+
+### Configuration Rapide
+
+```bash
+# 1. Cloner et installer
+bun install
+
+# 2. Configurer .env
+export ANTHROPIC_API_KEY=sk-ant-YOUR_KEY_HERE
+
+# 3. Démarrer l'API
+bun apps/api/index.ts
+
+# 4. Tester les endpoints
+bun test-ai-endpoints.ts
+```
+
+**Documentation complète**: Voir [AI_ENDPOINTS.md](./AI_ENDPOINTS.md)
+
+---
+
+## Turborepo starter
 
 This Turborepo starter is maintained by the Turborepo core team.
 
@@ -36,7 +84,7 @@ This Turborepo has some additional tools already setup for you:
 
 To build all apps and packages, run the following command:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#getting-started) installed (recommended):
 
 ```sh
 cd my-turborepo

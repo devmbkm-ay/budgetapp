@@ -75,4 +75,5 @@ export function CategoryPressureCard({ categories, status }: CategoryPressureCar
         </div>
       )}
     </article>
-  );
+  )
+}

@@ -64,3 +64,4 @@ export function MonthComparisonCard({ comparison, status }: MonthComparisonCardP
       </div>
     </article>
   );
+}

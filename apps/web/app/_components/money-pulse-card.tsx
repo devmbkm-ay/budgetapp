@@ -53,3 +53,4 @@ export function MoneyPulseCard({ status, totals }: MoneyPulseCardProps) {
       </div>
     </article>
   );
+}

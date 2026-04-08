@@ -63,3 +63,4 @@ export function ForecastCard({ forecast, period }: ForecastCardProps) {
       </p>
     </article>
   );
+}

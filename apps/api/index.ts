@@ -1,3 +1,14 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Load .env from the root directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const rootDir = resolve(__dirname, "../../");
+config({ path: resolve(rootDir, ".env") });
+
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { budgetRoute } from "./src/routes/budget";
