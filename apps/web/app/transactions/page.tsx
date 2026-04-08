@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AssistantFeed } from "../_components/assistant-feed";
+import { BudgetAlerts } from "../_components/budget-alerts";
 import { CategoryPressureCard } from "../_components/category-pressure-card";
 import { ConfirmDialog } from "../_components/confirm-dialog";
 import { ForecastCard } from "../_components/forecast-card";
@@ -277,6 +278,10 @@ export default function TransactionsPage() {
               {formatCurrency(expenseTotal, "EUR")}
             </strong>
           </article>
+        </section>
+
+        <section style={{ padding: "2rem 0", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
+          <BudgetAlerts />
         </section>
 
         <section style={styles.insightsShell}>
