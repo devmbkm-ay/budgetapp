@@ -4,6 +4,7 @@
 @import './cards.css';
 @import './forms.css';
 @import './badges.css';
+@import './skeleton.css';
 
 html,
 body {

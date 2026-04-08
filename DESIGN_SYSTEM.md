@@ -482,6 +482,234 @@ transition: all var(--transition-slow); /* 300ms */
 
 ---
 
+## Skeleton Loading Component
+
+The skeleton loading system provides visual placeholders while content is loading, improving perceived performance and user experience.
+
+### Basic Skeleton
+```tsx
+import { Skeleton } from '@/_components/skeleton';
+
+<Skeleton variant="pulse" className="skeleton-md" />
+```
+
+### Skeleton Variants
+
+**Animation Styles:**
+- `pulse` - Subtle fade pulse (default, smooth & elegant)
+- `shimmer` - Animated shimmer effect (more dynamic)
+- `bounce` - Quick pulse bounce (energetic)
+
+```tsx
+<Skeleton variant="pulse" />
+<Skeleton variant="shimmer" />
+<Skeleton variant="bounce" />
+```
+
+### SkeletonText
+Multiple lines of text placeholder
+```tsx
+import { SkeletonText } from '@/_components/skeleton';
+
+<SkeletonText lines={3} variant="pulse" />
+```
+
+### SkeletonAvatar
+Circular skeleton for avatars/profile pictures
+```tsx
+import { SkeletonAvatar } from '@/_components/skeleton';
+
+<SkeletonAvatar size="sm" />      {/* 32px */}
+<SkeletonAvatar size="md" />      {/* 48px */}
+<SkeletonAvatar size="lg" />      {/* 64px */}
+<SkeletonAvatar size="xl" />      {/* 96px */}
+```
+
+### SkeletonImage
+Rectangular skeleton for images
+```tsx
+import { SkeletonImage } from '@/_components/skeleton';
+
+<SkeletonImage size="sm" />    {/* 120px height */}
+<SkeletonImage size="md" />    {/* 200px height */}
+<SkeletonImage size="lg" />    {/* 300px height */}
+```
+
+### SkeletonCard
+Complete card with header, body, and footer
+```tsx
+import { SkeletonCard } from '@/_components/skeleton';
+
+<SkeletonCard variant="pulse" showFooter={true} />
+```
+
+### SkeletonList
+Multiple list items
+```tsx
+import { SkeletonList, SkeletonListItem } from '@/_components/skeleton';
+
+<SkeletonList count={5} variant="pulse" />
+
+// Or single item:
+<SkeletonListItem variant="pulse" />
+```
+
+### SkeletonGrid
+Grid of card skeletons (ideal for dashboards)
+```tsx
+import { SkeletonGrid } from '@/_components/skeleton';
+
+<SkeletonGrid count={6} variant="pulse" />
+```
+
+### SkeletonTable
+Table layout skeleton
+```tsx
+import { SkeletonTable } from '@/_components/skeleton';
+
+<SkeletonTable rows={5} columns={3} variant="pulse" />
+```
+
+### SkeletonWrapper
+Wrapper component that toggles between skeleton and content
+```tsx
+import { SkeletonWrapper, SkeletonCard } from '@/_components/skeleton';
+
+<SkeletonWrapper
+  isLoading={isLoading}
+  skeleton={<SkeletonCard />}
+>
+  <div>{actualContent}</div>
+</SkeletonWrapper>
+```
+
+### Real-World Example: Transaction List
+```tsx
+import { useEffect, useState } from 'react';
+import { SkeletonList } from '@/_components/skeleton';
+
+export function TransactionList() {
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/transactions');
+        const data = await res.json();
+        setTransactions(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  if (isLoading) {
+    return <SkeletonList count={5} variant="shimmer" />;
+  }
+
+  return (
+    <div className="skeleton-list">
+      {transactions.map((tx) => (
+        <div key={tx.id} className="skeleton-list-item">
+          <div className="skeleton-avatar" />
+          <div className="skeleton-content" style={{flex: 1}}>
+            <h4>{tx.description}</h4>
+            <p>{tx.date}</p>
+          </div>
+          <div className="skeleton-value">${tx.amount}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Dashboard with Skeleton Grid
+```tsx
+import { SkeletonGrid } from '@/_components/skeleton';
+
+export function Dashboard() {
+  const [cards, setCards] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCards().finally(() => setIsLoading(false));
+  }, []);
+
+  return (
+    <div>
+      {isLoading ? (
+        <SkeletonGrid count={6} variant="pulse" />
+      ) : (
+        <div className="card-grid">
+          {cards.map((card) => (
+            <Card key={card.id} {...card} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Skeleton Accessibility
+
+- Skeletons have `aria-hidden="true"` to hide them from screen readers
+- Content underneath remains accessible to assistive technologies
+- Motion respects `prefers-reduced-motion` (animations disabled)
+- No color-only indicators; uses shape and position
+
+### Skeleton CSS Classes
+
+For custom HTML without React components:
+
+```html
+<!-- Text placeholder -->
+<div class="skeleton skeleton-md"></div>
+
+<!-- Multiple lines -->
+<div class="skeleton-text">
+  <div class="skeleton-line"></div>
+  <div class="skeleton-line skeleton-line-short"></div>
+</div>
+
+<!-- Avatar -->
+<div class="skeleton skeleton-circle skeleton-md"></div>
+
+<!-- Image -->
+<div class="skeleton skeleton-rect skeleton-lg"></div>
+
+<!-- Card -->
+<div class="skeleton-card">
+  <!-- Content -->
+</div>
+
+<!-- List -->
+<div class="skeleton-list">
+  <div class="skeleton-list-item">
+    <!-- Item -->
+  </div>
+</div>
+```
+
+### Best Practices
+
+1. **Match the real content** - Skeleton should resemble the actual content size/shape
+2. **Use appropriate delays** - Don't show skeleton for <200ms (feels janky)
+3. **Limit network requests** - Combine data fetches to reduce loading states
+4. **Provide fallbacks** - Show sensible defaults if loading fails
+5. **Test with slow networks** - Use DevTools throttling to verify UX
+6. **Choose animation wisely**:
+   - `pulse` for simple, elegant loading
+   - `shimmer` for more engaging, dynamic feel
+   - `bounce` for quick interactions
+
+---
+
 ## Next Steps
 
 Once you're familiar with the design system:
