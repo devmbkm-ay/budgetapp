@@ -1,5 +1,5 @@
 // Budget Goals, Recurring Transactions, Filters, Batch Operations, and Alerts
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./client";
 
 export async function createBudgetGoal(
     userEmail: string,

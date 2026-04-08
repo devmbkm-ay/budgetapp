@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "prisma generate",
     "generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "bun run prisma/seed.ts"
