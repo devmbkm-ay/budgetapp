@@ -13,8 +13,9 @@ async function getSession(request: NextRequest) {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await getSession(request);
 
   if (!session) {
@@ -25,7 +26,7 @@ export async function DELETE(
   }
 
   try {
-    const url = new URL(`${API_URL}/budget-goals/${params.id}`);
+    const url = new URL(`${API_URL}/budget-goals/${id}`);
     url.searchParams.set("userEmail", session.email);
 
     const response = await fetch(url, {
