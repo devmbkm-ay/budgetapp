@@ -33,7 +33,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/budget_db
       - API_URL=https://api-budgetapp.ricardomboukou.online
-      - NEXT_PUBLIC_API_URL=https://budgetapp.ricardomboukou.online/api
+      - NEXT_PUBLIC_API_URL=https://api-budgetapp.ricardomboukou.online
       - AUTH_SECRET=your-super-secret-key-change-in-production
     depends_on:
       - api
