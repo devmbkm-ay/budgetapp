@@ -1,14 +1,14 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Import design system */
+@import './design-tokens.css';
+@import './components.css';
+@import './cards.css';
+@import './forms.css';
+@import './badges.css';
+@import './skeleton.css';
+@import './toast.css';
+@import './empty-state.css';
+@import './interactions.css';
+@import './nav.css';
 
 html,
 body {
@@ -17,9 +17,10 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--color-foreground);
+  background: var(--color-background);
   padding-bottom: 96px;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 * {
@@ -45,6 +46,7 @@ a {
   .imgLight {
     display: none;
   }
+
   .imgDark {
     display: unset;
   }

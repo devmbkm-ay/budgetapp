@@ -57,13 +57,13 @@ export function AppNav() {
   const navItems = user
     ? BASE_NAV_ITEMS
     : [
-        ...BASE_NAV_ITEMS,
-        { href: "/login", label: "Connexion" },
-        { href: "/register", label: "Inscription" },
-      ];
+      ...BASE_NAV_ITEMS,
+      { href: "/login", label: "Connexion" },
+      { href: "/register", label: "Inscription" },
+    ];
 
   return (
-    <nav style={styles.nav}>
+    <nav className="app-nav">
       {navItems.map((item) => {
         const isActive =
           item.href === "/"
@@ -74,12 +74,7 @@ export function AppNav() {
           <Link
             key={item.href}
             href={item.href}
-            style={{
-              ...styles.link,
-              ...(isActive ? styles.linkActive : null),
-              flex: 1,
-              textAlign: "center"
-            }}
+            className={`app-nav-link ${isActive ? "app-nav-link-active" : ""}`}
           >
             {item.label}
           </Link>
@@ -96,7 +91,7 @@ export function AppNav() {
             router.replace("/login");
             router.refresh();
           }}
-          style={styles.linkButton}
+          className="app-nav-button"
         >
           Déconnexion
         </button>
@@ -104,55 +99,3 @@ export function AppNav() {
     </nav>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  nav: {
-    position: "fixed",
-    left: "50%",
-    bottom: "18px",
-    transform: "translateX(-50%)",
-    display: "flex",
-    gap: "8px",
-    padding: "6px",
-    borderRadius: "20px",
-    background: "rgba(10, 16, 30, 0.72)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    backdropFilter: "blur(18px)",
-    WebkitBackdropFilter: "blur(18px)",
-    zIndex: 50,
-    boxShadow: "0 18px 40px rgba(0, 0, 0, 0.42)",
-    flexWrap: "nowrap",
-    justifyContent: "space-between",
-    width: "min(380px, calc(100vw - 32px))",
-  },
-  link: {
-    padding: "10px 4px",
-    borderRadius: "14px",
-    color: "rgba(235, 242, 255, 0.65)",
-    fontSize: "0.86rem",
-    fontWeight: 600,
-    transition: "all 0.2s ease",
-    whiteSpace: "nowrap",
-    textDecoration: "none"
-  },
-  linkActive: {
-    color: "#ffffff",
-    background:
-      "linear-gradient(135deg, rgba(10, 132, 255, 0.8), rgba(255, 69, 58, 0.86))",
-    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.25)",
-  },
-  linkButton: {
-    padding: "10px 4px",
-    borderRadius: "14px",
-    color: "rgba(255, 231, 232, 0.82)",
-    fontSize: "0.86rem",
-    fontWeight: 600,
-    transition: "all 0.2s ease",
-    whiteSpace: "nowrap",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    flex: 1,
-    textAlign: "center"
-  },
-};

@@ -1,0 +1,488 @@
+/* Micro-interactions & Polish */
+
+/* ===== PAGE TRANSITIONS ===== */
+
+@keyframes page-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes page-fade-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Apply to main page content */
+body>main,
+[role="main"] {
+    animation: page-fade-in var(--transition-slow) ease-out;
+}
+
+/* ===== HOVER SCALE EFFECTS ===== */
+
+.hover-scale {
+    transition: transform var(--transition-base);
+
+    &:hover {
+        transform: scale(1.02);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.hover-scale-sm {
+    transition: transform var(--transition-base);
+
+    &:hover {
+        transform: scale(1.01);
+    }
+
+    &:active {
+        transform: scale(0.99);
+    }
+}
+
+.hover-scale-lg {
+    transition: transform var(--transition-base);
+
+    &:hover {
+        transform: scale(1.04);
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+}
+
+/* ===== HOVER LIFT EFFECTS ===== */
+
+.hover-lift {
+    transition: all var(--transition-base);
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    &:active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.hover-lift-sm {
+    transition: all var(--transition-base);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+/* ===== HOVER GLOW EFFECTS ===== */
+
+.hover-glow {
+    transition: all var(--transition-base);
+
+    &:hover {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+}
+
+.hover-glow-success {
+    transition: all var(--transition-base);
+
+    &:hover {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+}
+
+.hover-glow-danger {
+    transition: all var(--transition-base);
+
+    &:hover {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+}
+
+/* ===== UNDERLINE ANIMATION ===== */
+
+.underline-animate {
+    position: relative;
+    text-decoration: none;
+
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: currentColor;
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform var(--transition-base);
+    }
+
+    &:hover::after {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+}
+
+/* ===== COLOR TRANSITION ===== */
+
+.color-transition {
+    transition: color var(--transition-base), background-color var(--transition-base),
+        border-color var(--transition-base);
+}
+
+/* ===== INPUT FOCUS ANIMATION ===== */
+
+input:focus,
+textarea:focus,
+select:focus {
+    animation: input-focus-ring 0.2s ease-out;
+}
+
+@keyframes input-focus-ring {
+    from {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+    }
+
+    to {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+}
+
+/* ===== ATTENTION SEEKERS ===== */
+
+@keyframes pulse-attention {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+.pulse-attention {
+    animation: pulse-attention 2s infinite;
+}
+
+/* Badge pulse for notifications */
+@keyframes badge-pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.badge-pulse {
+    animation: badge-pulse 1.5s ease-in-out infinite;
+}
+
+/* ===== LOADING SPINNER ===== */
+
+@keyframes spin-slow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-fast {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin-fast 1s linear infinite;
+}
+
+.spin-slow {
+    animation: spin-slow 2s linear infinite;
+}
+
+/* ===== BOUNCE ANIMATION ===== */
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.bounce {
+    animation: bounce 1s ease-in-out infinite;
+}
+
+/* ===== SHAKE ANIMATION ===== */
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+/* ===== FADE IN ANIMATION ===== */
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fade-in var(--transition-base);
+}
+
+.fade-in-slow {
+    animation: fade-in var(--transition-slow);
+}
+
+/* ===== SLIDE IN ANIMATIONS ===== */
+
+@keyframes slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slide-in-top {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-in-bottom {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-left {
+    animation: slide-in-left var(--transition-base);
+}
+
+.slide-in-right {
+    animation: slide-in-right var(--transition-base);
+}
+
+.slide-in-top {
+    animation: slide-in-top var(--transition-base);
+}
+
+.slide-in-bottom {
+    animation: slide-in-bottom var(--transition-base);
+}
+
+/* ===== EXPAND/COLLAPSE ===== */
+
+@keyframes expand {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 1000px;
+    }
+}
+
+@keyframes collapse {
+    from {
+        opacity: 1;
+        max-height: 1000px;
+    }
+
+    to {
+        opacity: 0;
+        max-height: 0;
+    }
+}
+
+.expand {
+    animation: expand var(--transition-base) ease-out;
+}
+
+.collapse {
+    animation: collapse var(--transition-base) ease-out;
+}
+
+/* ===== RIPPLE EFFECT ===== */
+
+@keyframes ripple {
+    from {
+        opacity: 1;
+        transform: scale(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(4);
+    }
+}
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        background-color: currentColor;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
+}
+
+/* ===== SMOOTH SCROLLING ===== */
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* ===== TRANSITION UTILITY CLASSES ===== */
+
+.transition-fast {
+    transition: all var(--transition-fast);
+}
+
+.transition-base {
+    transition: all var(--transition-base);
+}
+
+.transition-slow {
+    transition: all var(--transition-slow);
+}
+
+/* ===== REDUCE MOTION ===== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    .hover-scale,
+    .hover-scale-sm,
+    .hover-scale-lg,
+    .hover-lift,
+    .hover-lift-sm {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+}
