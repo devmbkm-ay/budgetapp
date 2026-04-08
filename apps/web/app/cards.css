@@ -1,0 +1,188 @@
+/* Card Component Variants */
+
+/* Base Card */
+.card {
+    background-color: var(--color-background-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* ===== CARD VARIANTS ===== */
+
+/* Elevated Card */
+.card-elevated {
+    background-color: var(--color-background);
+    box-shadow: var(--shadow-lg);
+
+    &:hover {
+        box-shadow: var(--shadow-xl);
+    }
+}
+
+/* Flat Card (Minimal) */
+.card-flat {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+
+    &:hover {
+        box-shadow: none;
+        transform: none;
+    }
+}
+
+/* Outlined Card */
+.card-outlined {
+    background-color: transparent;
+    border: 2px solid var(--color-border);
+    box-shadow: none;
+
+    &:hover {
+        border-color: var(--color-primary-500);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+/* Interactive Card */
+.card-interactive {
+    cursor: pointer;
+    position: relative;
+
+    &:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+    }
+
+    &:active {
+        transform: translateY(-2px);
+    }
+}
+
+/* ===== CARD SIZES ===== */
+
+.card-sm {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+}
+
+.card-lg {
+    padding: var(--space-8);
+    border-radius: var(--radius-2xl);
+}
+
+/* ===== CARD SECTIONS ===== */
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-4);
+
+    &:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+}
+
+.card-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--color-foreground);
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-foreground-secondary);
+    margin: 0;
+}
+
+.card-body {
+    padding: var(--space-4) 0;
+
+    &:first-child {
+        padding-top: 0;
+    }
+
+    &:last-child {
+        padding-bottom: 0;
+    }
+}
+
+.card-footer {
+    display: flex;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-4);
+}
+
+/* ===== CARD STATES ===== */
+
+/* Disabled state */
+.card:disabled,
+.card[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+        transform: none;
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+/* Loading state */
+.card-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ===== CARD LAYOUTS ===== */
+
+/* Horizontal Card */
+.card-horizontal {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+    .card-horizontal {
+        flex-direction: column;
+    }
+}
+
+/* Grid Layout for multiple cards */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+}
