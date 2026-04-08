@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate",
+    "postinstall": "prisma generate",
     "generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "bun run prisma/seed.ts"
