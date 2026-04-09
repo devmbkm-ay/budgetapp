@@ -93,6 +93,7 @@ export function AuthShell({ mode }: AuthShellProps) {
         <section style={styles.cardOuter}>
           <div style={{
             ...styles.cardFlipper,
+            height: isLogin ? 480 : 620,
             transform: isLogin ? "rotateY(0deg)" : "rotateY(180deg)",
           }}>
             {/* Login face */}
@@ -371,9 +372,8 @@ const styles: Record<string, CSSProperties> = {
   cardFlipper: {
     position: "relative",
     width: "100%",
-    height: 520,
     transformStyle: "preserve-3d",
-    transition: "transform 700ms cubic-bezier(0.22, 1, 0.36, 1)",
+    transition: "transform 700ms cubic-bezier(0.22, 1, 0.36, 1), height 400ms cubic-bezier(0.22, 1, 0.36, 1)",
   },
   cardFace: {
     position: "absolute",
