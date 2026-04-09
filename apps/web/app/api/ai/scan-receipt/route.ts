@@ -37,26 +37,24 @@ export async function POST(request: NextRequest) {
 
 Retourne UNIQUEMENT le JSON, sans explication ni markdown.`;
 
-    // Use Claude Haiku — faster and already configured via ANTHROPIC_API_KEY
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "gpt-4o",
         max_tokens: 256,
         messages: [
           {
             role: "user",
             content: [
-              {
-                type: "image",
-                source: { type: "base64", media_type: mimeType, data: body.image },
-              },
               { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${mimeType};base64,${body.image}`, detail: "low" },
+              },
             ],
           },
         ],
@@ -65,12 +63,12 @@ Retourne UNIQUEMENT le JSON, sans explication ni markdown.`;
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("Anthropic error:", err);
+      console.error("OpenAI error:", err);
       return NextResponse.json({ error: "Service IA indisponible." }, { status: 502 });
     }
 
-    const data = await response.json() as { content: Array<{ type: string; text: string }> };
-    const raw = data.content.find((b) => b.type === "text")?.text ?? "";
+    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+    const raw = data.choices[0]?.message?.content ?? "";
 
     // Strip markdown fences if present
     const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
