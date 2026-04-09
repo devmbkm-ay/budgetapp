@@ -92,7 +92,7 @@ export default function BudgetGoalsPage() {
       const res = await fetch("/api/budget-goals");
       if (!res.ok) throw new Error("Impossible de charger les budgets.");
       const data = await res.json();
-      setGoals(data.data ?? []);
+      setGoals(Array.isArray(data) ? data : (data.data ?? []));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue.");
     } finally {
