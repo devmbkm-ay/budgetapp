@@ -1,13 +1,11 @@
 import { Elysia, t } from "elysia";
 import { listTransactions } from "../../../../packages/database/index.ts";
 import OpenAI from "openai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
 
 // Lazy initialization of AI clients
 let openai: OpenAI | null = null;
-let googleAI: GoogleGenerativeAI | null = null;
 
 function getOpenAIClient(): OpenAI {
     if (!openai) {
@@ -18,39 +16,44 @@ function getOpenAIClient(): OpenAI {
     return openai;
 }
 
-function getGoogleAIClient(): GoogleGenerativeAI {
-    if (!googleAI) {
-        googleAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-    }
-    return googleAI;
-}
-
 /**
- * Génère des insights IA via Gemini (Fallback)
+ * Génère des insights IA via Gemini (Fallback via Fetch)
  */
 async function generateAIInsightsWithGemini(transactions: any[], userEmail: string) {
     const expenses = transactions.filter(t => t.type === 'expense');
     const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
 
-    const prompt = `En tant qu'assistant financier expert, analyse le profil de Ricardo :
+    const prompt = {
+        contents: [{
+            parts: [{
+                text: `En tant qu'assistant financier expert, analyse le profil de Ricardo :
 - Dépenses : ${totalExpense}€
 - Revenus : ${totalIncome}€
 - Surplus : ${totalIncome - totalExpense}€
 
 Fournis 3 conseils courts (en français) axés sur l'épargne et l'investissement BTC.
-Format : un conseil par ligne, maximum 15 mots par conseil. Pas de numérotation.`;
+Format : un conseil par ligne, maximum 15 mots par conseil. Pas de numérotation.`
+            }]
+        }]
+    };
 
     try {
-        const model = getGoogleAIClient().getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(prompt),
+        });
+
+        if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+
+        const data: any = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
         return {
             summary: "Analyse intelligente (via Gemini).",
-            insights: text.split('\n').filter(l => l.trim().length > 0).slice(0, 3),
-            metadata: { model: "gemini-1.5-flash", analysis_date: new Date().toISOString() }
+            insights: text.split('\n').filter((l: string) => l.trim().length > 0).slice(0, 3),
+            metadata: { model: "gemini-pro", analysis_date: new Date().toISOString() }
         };
     } catch (error) {
         console.error("[GEMINI ERROR]", error);
