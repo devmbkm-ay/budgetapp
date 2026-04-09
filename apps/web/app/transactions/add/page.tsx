@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, type CSSProperties, type FormEvent } from "react";
+import React, { useState, useEffect, useRef, type CSSProperties, type FormEvent } from "react";
 
 type TransactionType = "expense" | "income";
 
@@ -98,6 +98,9 @@ export default function MobileFintechAdd() {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isCapturingPreview, setIsCapturingPreview] = useState(false);
     const [initialBalance, setInitialBalance] = useState<number | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setDate((currentDate) => currentDate || getCurrentDate());
@@ -143,6 +146,54 @@ export default function MobileFintechAdd() {
     const previewNarrative = isExpense
         ? `Cette depense sera rangee dans ${selectedCategory.name || "une categorie"}`
         : `Ce revenu sera ajoute a ${selectedCategory.name || "une categorie"}`;
+
+    const handleScanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setScanError(null);
+        setIsScanning(true);
+        try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    // Strip the data URL prefix: "data:image/jpeg;base64,..."
+                    resolve(result.split(",")[1] ?? "");
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const res = await fetch("/api/ai/scan-receipt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: base64, mimeType: file.type }),
+            });
+
+            const data = await res.json() as {
+                label?: string; amount?: number; category?: string; date?: string | null; confidence?: number; error?: string;
+            };
+
+            if (!res.ok || data.error) {
+                setScanError(data.error ?? "Impossible d'analyser le ticket.");
+                return;
+            }
+
+            if (data.label) setLabel(data.label);
+            if (data.amount && data.amount > 0) setAmount(data.amount.toFixed(2));
+            if (data.date) setDate(data.date);
+            if (data.category) {
+                const match = CATEGORIES.find((c) => c.name === data.category && c.type === "expense");
+                if (match) setCategory(match.id);
+            }
+        } catch {
+            setScanError("Erreur lors du scan. Réessayez.");
+        } finally {
+            setIsScanning(false);
+            // Reset input so same file can be re-scanned
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
 
     const formatAmount = (val: string) => {
         const cleaned = val.replace(/[^\d]/g, "");
@@ -376,7 +427,44 @@ export default function MobileFintechAdd() {
             <form id="transaction-form" style={styles.scrollContent} onSubmit={handleSubmit}>
                 <div style={styles.contentShell}>
                     <section style={styles.section}>
-                        <p style={styles.sectionTitle}>Détails principaux</p>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                            <p style={{ ...styles.sectionTitle, margin: 0 }}>Détails principaux</p>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isScanning}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "7px 14px",
+                                    borderRadius: 999,
+                                    border: `1px solid ${accentColor}55`,
+                                    background: `${accentColor}18`,
+                                    color: accentColor,
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                    cursor: isScanning ? "progress" : "pointer",
+                                    opacity: isScanning ? 0.6 : 1,
+                                    transition: "all 0.2s ease",
+                                }}
+                            >
+                                {isScanning ? "⏳" : "📷"} {isScanning ? "Analyse..." : "Scanner un ticket"}
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                style={{ display: "none" }}
+                                onChange={handleScanFile}
+                            />
+                        </div>
+                        {scanError && (
+                            <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#ff8e87", padding: "8px 12px", background: "rgba(255,142,135,0.1)", borderRadius: 10, border: "1px solid rgba(255,142,135,0.2)" }}>
+                                {scanError}
+                            </p>
+                        )}
                         <input
                             type="text"
                             placeholder={isExpense ? "Qu'avez-vous acheté ?" : "D'où vient ce revenu ? (Optionnel)"}
