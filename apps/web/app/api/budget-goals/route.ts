@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBudgetGoals, createBudgetGoal } from "../../../../../packages/database/index";
+import { getBudgetGoals, createBudgetGoal, listTransactionsByDateRange } from "../../../../../packages/database/index";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 
 async function getSession(request: NextRequest) {
@@ -16,7 +16,30 @@ export async function GET(request: NextRequest) {
 
   try {
     const goals = await getBudgetGoals(session.email);
-    return NextResponse.json(goals);
+
+    // Calculate spent amount for current month per category
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const startOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const transactions = await listTransactionsByDateRange(session.email, startOfMonth, startOfNextMonth);
+
+    const spentByCategory: Record<string, number> = {};
+    for (const tx of transactions) {
+      if (tx.type === "expense" && tx.category) {
+        spentByCategory[tx.category] = (spentByCategory[tx.category] ?? 0) + tx.amount;
+      }
+    }
+
+    const goalsWithSpent = goals.map((g) => {
+      const spent = spentByCategory[g.category] ?? 0;
+      return {
+        ...g,
+        spent,
+        percentUsed: g.limitAmount > 0 ? (spent / g.limitAmount) * 100 : 0,
+      };
+    });
+
+    return NextResponse.json(goalsWithSpent);
   } catch (error) {
     console.error("Budget goals fetch failed:", error);
     return NextResponse.json({ error: "Failed to fetch budget goals" }, { status: 500 });
