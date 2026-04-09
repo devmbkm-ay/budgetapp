@@ -1,11 +1,13 @@
 import { Elysia, t } from "elysia";
 import { listTransactions } from "../../../../packages/database/index.ts";
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
 
-// Lazy initialization of OpenAI client (after env vars are loaded)
+// Lazy initialization of AI clients
 let openai: OpenAI | null = null;
+let googleAI: GoogleGenerativeAI | null = null;
 
 function getOpenAIClient(): OpenAI {
     if (!openai) {
@@ -14,6 +16,46 @@ function getOpenAIClient(): OpenAI {
         });
     }
     return openai;
+}
+
+function getGoogleAIClient(): GoogleGenerativeAI {
+    if (!googleAI) {
+        googleAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+    }
+    return googleAI;
+}
+
+/**
+ * Génère des insights IA via Gemini (Fallback)
+ */
+async function generateAIInsightsWithGemini(transactions: any[], userEmail: string) {
+    const expenses = transactions.filter(t => t.type === 'expense');
+    const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+
+    const prompt = `En tant qu'assistant financier expert, analyse le profil de Ricardo :
+- Dépenses : ${totalExpense}€
+- Revenus : ${totalIncome}€
+- Surplus : ${totalIncome - totalExpense}€
+
+Fournis 3 conseils courts (en français) axés sur l'épargne et l'investissement BTC.
+Format : un conseil par ligne, maximum 15 mots par conseil. Pas de numérotation.`;
+
+    try {
+        const model = getGoogleAIClient().getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        return {
+            summary: "Analyse intelligente (via Gemini).",
+            insights: text.split('\n').filter(l => l.trim().length > 0).slice(0, 3),
+            metadata: { model: "gemini-1.5-flash", analysis_date: new Date().toISOString() }
+        };
+    } catch (error) {
+        console.error("[GEMINI ERROR]", error);
+        throw error;
+    }
 }
 
 /**
@@ -184,7 +226,13 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
                 };
             }
 
-            const analysis = await generateAIInsightsWithOpenAI(transactions, body.userEmail);
+            let analysis;
+            try {
+                analysis = await generateAIInsightsWithOpenAI(transactions, body.userEmail);
+            } catch (err) {
+                console.warn("OpenAI failed or quota reached, falling back to Gemini...");
+                analysis = await generateAIInsightsWithGemini(transactions, body.userEmail);
+            }
             return analysis;
 
         } catch (error) {
@@ -193,7 +241,7 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
             return {
                 error: "Erreur lors de l'analyse IA",
                 details: String(error),
-                hint: "Vérifie que OPENAI_API_KEY est configurée dans .env"
+                hint: "Vérifie tes clés API (OPENAI_API_KEY ou GEMINI_API_KEY) dans .env"
             };
         }
     }, {
