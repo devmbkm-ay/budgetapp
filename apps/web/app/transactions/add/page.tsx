@@ -147,7 +147,7 @@ export default function MobileFintechAdd() {
         ? `Cette depense sera rangee dans ${selectedCategory.name || "une categorie"}`
         : `Ce revenu sera ajoute a ${selectedCategory.name || "une categorie"}`;
 
-    const compressImage = (file: File, maxWidth = 1200, quality = 0.82): Promise<string> =>
+    const compressImage = (file: File, maxWidth = 800, quality = 0.72): Promise<string> =>
         new Promise((resolve, reject) => {
             const img = new Image();
             const url = URL.createObjectURL(file);

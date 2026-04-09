@@ -3,5 +3,8 @@
   "framework": "nextjs",
   "installCommand": "bun install --frozen-lockfile",
   "buildCommand": "cd apps/web && bun run build",
-  "devCommand": "cd apps/web && bun run dev"
+  "devCommand": "cd apps/web && bun run dev",
+  "functions": {
+    "apps/web/app/api/ai/**": { "maxDuration": 60 }
+  }
 }
