@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 
-export const maxDuration = 30; // seconds — Vercel Hobby allows up to 60s
+export const maxDuration = 60; // Vercel Hobby max
 
 async function getSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -28,33 +28,35 @@ export async function POST(request: NextRequest) {
 
     const mimeType = body.mimeType ?? "image/jpeg";
 
-    const prompt = `You are a receipt scanner. Extract information from this receipt image and return ONLY a valid JSON object with these fields:
-- "label": the merchant name or a short description of the purchase (string, in French if possible)
-- "amount": the total amount paid as a number (no currency symbol, use . as decimal separator)
-- "category": one of exactly these values: ${CATEGORIES.join(", ")}
-- "date": the purchase date in YYYY-MM-DD format, or null if not visible
-- "confidence": a number between 0 and 1 indicating how confident you are in the extraction
+    const prompt = `Tu es un scanner de ticket de caisse. Extrais les informations de cette image et retourne UNIQUEMENT un objet JSON valide avec ces champs:
+- "label": nom du marchand ou courte description de l'achat (string, en français)
+- "amount": montant total payé en nombre (sans symbole monétaire, point comme séparateur décimal)
+- "category": une valeur parmi exactement: ${CATEGORIES.join(", ")}
+- "date": date d'achat au format YYYY-MM-DD, ou null si non visible
+- "confidence": nombre entre 0 et 1 indiquant ta confiance
 
-Return ONLY the JSON, no explanation, no markdown.`;
+Retourne UNIQUEMENT le JSON, sans explication ni markdown.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Use Claude Haiku — faster and already configured via ANTHROPIC_API_KEY
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 256,
         messages: [
           {
             role: "user",
             content: [
-              { type: "text", text: prompt },
               {
-                type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${body.image}`, detail: "low" },
+                type: "image",
+                source: { type: "base64", media_type: mimeType, data: body.image },
               },
+              { type: "text", text: prompt },
             ],
           },
         ],
@@ -63,12 +65,12 @@ Return ONLY the JSON, no explanation, no markdown.`;
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("OpenAI error:", err);
+      console.error("Anthropic error:", err);
       return NextResponse.json({ error: "Service IA indisponible." }, { status: 502 });
     }
 
-    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-    const raw = data.choices[0]?.message?.content ?? "";
+    const data = await response.json() as { content: Array<{ type: string; text: string }> };
+    const raw = data.content.find((b) => b.type === "text")?.text ?? "";
 
     // Strip markdown fences if present
     const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
@@ -81,7 +83,6 @@ Return ONLY the JSON, no explanation, no markdown.`;
       return NextResponse.json({ error: "Impossible d'analyser le ticket." }, { status: 422 });
     }
 
-    // Validate category
     if (!CATEGORIES.includes(parsed.category)) {
       parsed.category = "Alimentaire";
     }
