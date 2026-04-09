@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 - "label": nom du marchand ou courte description de l'achat (string, en français)
 - "amount": montant total payé en nombre (sans symbole monétaire, point comme séparateur décimal)
 - "category": une valeur parmi exactement: ${CATEGORIES.join(", ")}
-- "date": date d'achat au format YYYY-MM-DD, ou null si non visible
+- "date": date d'achat au format YYYY-MM-DD (ex: 2026-04-02 pour le 2 avril 2026), convertis depuis n'importe quel format (DD-MM-YYYY, DD/MM/YYYY, etc.), ou null si non visible
 - "confidence": nombre entre 0 et 1 indiquant ta confiance
 
 Retourne UNIQUEMENT le JSON, sans explication ni markdown.`;
