@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listTransactions, type TransactionRecord } from "../../../../../../packages/database/index";
+
+export const maxDuration = 30;
 import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 
 async function getSession(request: NextRequest) {
