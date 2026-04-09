@@ -1,5 +1,3 @@
-import { investmentRoutes } from "../../../../../api/src/routes/investment";
-
 // Simple bridge to avoid CORS/Fetch issues in local dev if web and api are on different ports
 export const GET = async () => {
     try {
