@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listTransactions, type TransactionRecord } from "../../../../../packages/database/index";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
+import { listTransactions, type TransactionRecord } from "../../../../../../packages/database/index";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 
 async function getSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
