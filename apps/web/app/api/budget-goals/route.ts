@@ -17,21 +17,46 @@ export async function GET(request: NextRequest) {
   try {
     const goals = await getBudgetGoals(session.email);
 
-    // Calculate spent amount for current month per category
     const now = new Date();
-    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const startOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-    const transactions = await listTransactionsByDateRange(session.email, startOfMonth, startOfNextMonth);
 
-    const spentByCategory: Record<string, number> = {};
-    for (const tx of transactions) {
-      if (tx.type === "expense" && tx.category) {
-        spentByCategory[tx.category] = (spentByCategory[tx.category] ?? 0) + tx.amount;
+    function getPeriodRange(period: string): { start: Date; end: Date } {
+      switch (period) {
+        case "weekly": {
+          // Week starts on Monday
+          const day = now.getUTCDay(); // 0=Sun, 1=Mon, ...
+          const diffToMonday = (day === 0 ? -6 : 1 - day);
+          const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToMonday));
+          const nextMonday = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000);
+          return { start: monday, end: nextMonday };
+        }
+        case "yearly": {
+          const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+          const end = new Date(Date.UTC(now.getUTCFullYear() + 1, 0, 1));
+          return { start, end };
+        }
+        default: { // monthly
+          const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+          const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+          return { start, end };
+        }
       }
     }
 
+    // Group goals by period to minimise DB queries (at most 3 queries)
+    const periods = [...new Set(goals.map((g) => g.period))];
+    const txByPeriod: Record<string, Awaited<ReturnType<typeof listTransactionsByDateRange>>> = {};
+    await Promise.all(
+      periods.map(async (period) => {
+        const { start, end } = getPeriodRange(period);
+        txByPeriod[period] = await listTransactionsByDateRange(session.email, start, end);
+      }),
+    );
+
     const goalsWithSpent = goals.map((g) => {
-      const spent = spentByCategory[g.category] ?? 0;
+      const transactions = txByPeriod[g.period] ?? [];
+      const spent = transactions
+        .filter((tx) => tx.type === "expense" && tx.category === g.category)
+        .reduce((sum, tx) => sum + tx.amount, 0);
       return {
         ...g,
         spent,
