@@ -385,53 +385,33 @@ export default function MobileFintechAdd() {
                             style={styles.textInput}
                         />
 
-                        <div style={styles.categoryGrid}>
-                            {filteredCategories.map((cat) => (
-                                <button
-                                    key={cat.id}
-                                    type="button"
-                                    onClick={() => setCategory(cat.id)}
-                                    style={{
-                                        ...styles.categoryChip,
-                                        background: category === cat.id
-                                            ? `linear-gradient(135deg, ${cat.color}33, rgba(255,255,255,0.08))`
-                                            : "rgba(8, 14, 29, 0.36)",
-                                        borderColor: category === cat.id ? cat.color : "rgba(255,255,255,0.08)",
-                                        boxShadow: category === cat.id ? `0 16px 30px -18px ${cat.color}, inset 0 1px 0 rgba(255,255,255,0.18)` : "none",
-                                        transform: category === cat.id ? "translateY(-1px)" : "translateY(0)",
-                                        animation: category === cat.id ? "chipPop 0.34s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-                                    }}
-                                >
-                                    {category === cat.id ? (
-                                        <span
-                                            style={{
-                                                ...styles.categoryRipple,
-                                                color: cat.color,
-                                            }}
-                                        />
-                                    ) : null}
-                                    <span style={styles.categoryIcon}>{cat.icon}</span>
-                                    <span style={{ ...styles.categoryName, color: category === cat.id ? cat.color : "#fff" }}>{cat.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <label style={styles.selectLabel}>
-                            Toutes les catégories
-                            <div style={styles.selectWrap}>
-                                <select
-                                    value={category}
-                                    onChange={(e) => setCategory(e.target.value)}
-                                    style={{ ...styles.selectInput, borderColor: `${accentColor}33` }}
-                                >
-                                    {filteredCategories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.icon} {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <span style={{ ...styles.selectChevron, color: accentColor }}>⌄</span>
+                        <div style={styles.categoryStrip}>
+                            <div className="category-scroll" style={styles.categoryScroll}>
+                                {filteredCategories.map((cat) => (
+                                    <button
+                                        key={cat.id}
+                                        type="button"
+                                        onClick={() => setCategory(cat.id)}
+                                        style={{
+                                            ...styles.categoryChip,
+                                            background: category === cat.id
+                                                ? `linear-gradient(135deg, ${cat.color}33, rgba(255,255,255,0.08))`
+                                                : "rgba(8, 14, 29, 0.36)",
+                                            borderColor: category === cat.id ? cat.color : "rgba(255,255,255,0.08)",
+                                            boxShadow: category === cat.id ? `0 0 18px -4px ${cat.color}88, inset 0 1px 0 rgba(255,255,255,0.18)` : "none",
+                                            transform: category === cat.id ? "translateY(-2px) scale(1.04)" : "translateY(0) scale(1)",
+                                        }}
+                                    >
+                                        {category === cat.id ? (
+                                            <span style={{ ...styles.categoryRipple, color: cat.color }} />
+                                        ) : null}
+                                        <span style={styles.categoryIcon}>{cat.icon}</span>
+                                        <span style={{ ...styles.categoryName, color: category === cat.id ? cat.color : "rgba(227,236,255,0.82)" }}>{cat.name}</span>
+                                    </button>
+                                ))}
                             </div>
-                        </label>
+                            <div style={{ ...styles.categoryFade, background: `linear-gradient(to left, ${isExpense ? "#0d1425" : "#07141b"} 0%, transparent 100%)` }} />
+                        </div>
                     </section>
 
                     <section
@@ -587,6 +567,8 @@ export default function MobileFintechAdd() {
                     0% { transform: scale(0.3); opacity: 0.38; }
                     100% { transform: scale(1.7); opacity: 0; }
                 }
+
+                .category-scroll::-webkit-scrollbar { display: none; }
             `}</style>
         </div>
     );
@@ -771,27 +753,45 @@ const styles: Record<string, CSSProperties> = {
         WebkitBackdropFilter: "blur(18px)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
     },
-    categoryGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gap: "12px",
+    categoryStrip: {
+        position: "relative",
         marginTop: "16px",
+    },
+    categoryScroll: {
+        display: "flex",
+        flexDirection: "row",
+        gap: "10px",
+        overflowX: "auto",
+        paddingBottom: "6px",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+    },
+    categoryFade: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        width: "56px",
+        height: "calc(100% - 6px)",
+        pointerEvents: "none",
     },
     categoryChip: {
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: "10px",
-        padding: "12px",
-        borderRadius: "14px",
+        justifyContent: "center",
+        gap: "6px",
+        padding: "12px 14px",
+        borderRadius: "16px",
         border: "1px solid rgba(255,255,255,0.08)",
         cursor: "pointer",
-        textAlign: "left",
+        flexShrink: 0,
         background: "rgba(8, 14, 29, 0.36)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
         transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
         position: "relative",
         overflow: "hidden",
+        minWidth: "82px",
     },
     categoryRipple: {
         position: "absolute",
@@ -806,37 +806,15 @@ const styles: Record<string, CSSProperties> = {
         pointerEvents: "none",
     },
     categoryIcon: {
-        fontSize: "20px",
+        fontSize: "22px",
+        lineHeight: 1,
     },
     categoryName: {
-        fontSize: "14px",
+        fontSize: "11px",
         fontWeight: 600,
-    },
-    selectLabel: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        marginTop: "16px",
-        fontSize: "0.84rem",
-        color: "rgba(227, 236, 255, 0.74)",
-        letterSpacing: "0.02em",
-    },
-    selectWrap: {
-        position: "relative",
-    },
-    selectInput: {
-        width: "100%",
-        appearance: "none",
-        background: "rgba(8, 14, 29, 0.42)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "16px",
-        padding: "14px 44px 14px 16px",
-        color: "#f7fbff",
-        fontSize: "0.98rem",
-        outline: "none",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+        textAlign: "center",
+        lineHeight: 1.2,
+        letterSpacing: "0.01em",
     },
     selectChevron: {
         position: "absolute",
