@@ -30,6 +30,7 @@ Format : un conseil par ligne, sans numérotation.`
     }]
   };
 
+  // Cache buster comment to force Vercel build update: v2026.04.10.0100
   const apiKey = process.env.GEMINI_API_KEY;
   console.log(`[DEBUG] Attempting Gemini call with key: ${apiKey ? (apiKey.substring(0, 5) + '...') : 'MISSING'}`);
 
