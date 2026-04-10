@@ -37,13 +37,16 @@ Format : un conseil par ligne, sans numérotation.`
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  // List of models to try in order of likelihood to work
+  // Google Cloud Vertex API compatible model names usually require the full path
+  // However, for the Generative Language API (API Keys), it's just the model name.
+  // We'll try common variations that work specifically with API keys.
   const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
   
   for (const modelId of modelsToTry) {
     try {
-      console.log(`[DEBUG] Trying Gemini model: ${modelId} on v1`);
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`, {
+      // Trying the most standard API key endpoint: v1beta
+      console.log(`[DEBUG] Trying Gemini model: ${modelId} on v1beta`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(prompt),
@@ -75,7 +78,7 @@ Format : un conseil par ligne, sans numérotation.`
     }
   }
 
-  throw new Error("All Gemini models failed. Please check if the API Key has the 'Generative Language API' enabled in Google Cloud Console.");
+  throw new Error("All Gemini models failed. Please ensure the API key is valid and linked to the active Gemini API in your Google Cloud Project.");
 }
 
 async function generateInsights(transactions: TransactionRecord[]) {
