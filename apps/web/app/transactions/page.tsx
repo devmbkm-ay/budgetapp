@@ -11,6 +11,7 @@ import { ForecastCard } from "../_components/forecast-card";
 import { MoneyPulseCard } from "../_components/money-pulse-card";
 import { MonthComparisonCard } from "../_components/month-comparison-card";
 import { InvestmentOpportunityCard } from "../_components/investment-opportunity-card";
+import { StreakCard } from "../_components/streak-card";
 import { forecastStatusCopy, forecastStatusLabel, forecastStatusTheme, type InsightsSummary } from "../../lib/insights";
 import {
   categoryEmoji,
@@ -282,6 +283,7 @@ export default function TransactionsPage() {
               {formatCurrency(expenseTotal, "EUR")}
             </strong>
           </article>
+          <StreakCard transactions={transactions} />
         </section>
 
         <section style={{ padding: "2rem 0", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
