@@ -1,8 +1,21 @@
 // Simple bridge to avoid CORS/Fetch issues in local dev if web and api are on different ports
 export const GET = async () => {
     try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur');
+        console.log("Proxying BTC price request...");
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur', {
+            cache: 'no-store'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`CoinGecko responded with ${response.status}`);
+        }
+
         const data = await response.json();
+        
+        if (!data.bitcoin || !data.bitcoin.eur) {
+            throw new Error("Invalid response format from CoinGecko");
+        }
+
         return Response.json({
             symbol: 'BTC',
             price: data.bitcoin.eur,
@@ -10,7 +23,11 @@ export const GET = async () => {
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        return Response.json({ error: 'Failed to proxy BTC price' }, { status: 500 });
+        console.error("BTC Proxy Error:", error);
+        return Response.json({ 
+            error: 'Failed to proxy BTC price',
+            details: error instanceof Error ? error.message : String(error)
+        }, { status: 500 });
     }
 }
 

@@ -76,7 +76,9 @@ export function InvestmentOpportunityCard({ balance }: { balance: number }) {
             Ton surplus de <span style={styles.accent}>{formatCurrency(balance, "EUR")}</span> pourrait devenir :
           </p>
           <div style={styles.resultBox}>
-            <span style={styles.satsValue}>{simulation.simulatedSatoshis.toLocaleString()}</span>
+            <span style={styles.satsValue}>
+              {simulation.simulatedSatoshis ? simulation.simulatedSatoshis.toLocaleString() : '0'}
+            </span>
             <span style={styles.satsLabel}> Satoshis</span>
           </div>
           <p style={styles.meta}>
