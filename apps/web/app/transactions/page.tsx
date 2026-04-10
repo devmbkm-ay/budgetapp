@@ -250,6 +250,9 @@ export default function TransactionsPage() {
           <Link href="/transactions/add" style={styles.primaryAction}>
             Ajouter une transaction
           </Link>
+          <Link href="/stats" style={styles.statsAction}>
+            Intelligence Financière
+          </Link>
         </header>
 
         <section style={styles.heroGrid}>
@@ -549,6 +552,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#fff",
     fontWeight: 700,
     boxShadow: "0 18px 42px rgba(10, 132, 255, 0.16)",
+  },
+  statsAction: {
+    padding: "14px 18px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.1)",
+    border: "1px solid rgba(255,255,255,0.2)",
+    color: "#fff",
+    fontWeight: 700,
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
   },
   heroGrid: {
     display: "grid",
