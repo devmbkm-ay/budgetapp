@@ -14,6 +14,48 @@ const CATEGORIES = [
   "Logement", "Utilitaires",
 ];
 
+/**
+ * Tentative de scan via Gemini Vision
+ */
+async function scanWithGemini(imageBase64: string, mimeType: string) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY missing");
+
+  const promptText = `Tu es un scanner de ticket de caisse financier. Extrais les informations de cette image et retourne UNIQUEMENT un objet JSON valide avec ces champs:
+- "label": nom du marchand ou courte description (string, français)
+- "amount": montant total payé en nombre (point décimal)
+- "category": une valeur parmi exactement: ${CATEGORIES.join(", ")}
+- "date": date au format YYYY-MM-DD
+- "confidence": nombre entre 0 et 1
+
+Retourne UNIQUEMENT le JSON, sans markdown.`;
+
+  const payload = {
+    contents: [{
+      parts: [
+        { text: promptText },
+        { inline_data: { mime_type: mimeType, data: imageBase64 } }
+      ]
+    }]
+  };
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini Vision error (${response.status}): ${err}`);
+  }
+
+  const data = await response.json();
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+  return JSON.parse(cleaned);
+}
+
 export async function POST(request: NextRequest) {
   const session = await getSession(request);
   if (!session) {
@@ -28,70 +70,65 @@ export async function POST(request: NextRequest) {
 
     const mimeType = body.mimeType ?? "image/jpeg";
 
-    const prompt = `Tu es un scanner de ticket de caisse. Extrais les informations de cette image et retourne UNIQUEMENT un objet JSON valide avec ces champs:
+    // 1. Essayer OpenAI (si clé présente et quota ok)
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const prompt = `Tu es un scanner de ticket de caisse. Extrais les informations de cette image et retourne UNIQUEMENT un objet JSON valide avec ces champs:
 - "label": nom du marchand ou courte description de l'achat (string, en français)
 - "amount": montant total payé en nombre (sans symbole monétaire, point comme séparateur décimal)
 - "category": une valeur parmi exactement: ${CATEGORIES.join(", ")}
-- "date": date d'achat au format YYYY-MM-DD (ex: 2026-04-02 pour le 2 avril 2026), convertis depuis n'importe quel format (DD-MM-YYYY, DD/MM/YYYY, etc.), ou null si non visible
-- "confidence": nombre entre 0 et 1 indiquant ta confiance
+- "date": date d'achat au format YYYY-MM-DD, ou null si non visible
+- "confidence": nombre entre 0 et 1
 
-Retourne UNIQUEMENT le JSON, sans explication ni markdown.`;
+Retourne UNIQUEMENT le JSON.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        max_tokens: 256,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            max_tokens: 256,
+            messages: [
               {
-                type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${body.image}`, detail: "low" },
+                role: "user",
+                content: [
+                  { type: "text", text: prompt },
+                  {
+                    type: "image_url",
+                    image_url: { url: `data:${mimeType};base64,${body.image}`, detail: "low" },
+                  },
+                ],
               },
             ],
-          },
-        ],
-      }),
-    });
+          }),
+        });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("OpenAI error:", err);
-      return NextResponse.json({ error: "Service IA indisponible." }, { status: 502 });
+        if (response.ok) {
+          const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+          const raw = data.choices[0]?.message?.content ?? "";
+          const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+          const parsed = JSON.parse(cleaned);
+          return NextResponse.json({ ...parsed, method: "openai" });
+        } else {
+          console.warn("OpenAI fallback triggered due to status:", response.status);
+        }
+      } catch (e) {
+        console.warn("OpenAI scan failed, falling back to Gemini:", e);
+      }
     }
 
-    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-    const raw = data.choices[0]?.message?.content ?? "";
-
-    // Strip markdown fences if present
-    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-
-    let parsed: { label: string; amount: number; category: string; date: string | null; confidence: number };
+    // 2. Fallback Gemini
     try {
-      parsed = JSON.parse(cleaned) as typeof parsed;
-    } catch {
-      console.error("Failed to parse AI response:", raw);
-      return NextResponse.json({ error: "Impossible d'analyser le ticket." }, { status: 422 });
+      const parsed = await scanWithGemini(body.image, mimeType);
+      return NextResponse.json({ ...parsed, method: "gemini" });
+    } catch (err) {
+      console.error("Gemini scan failed:", err);
+      return NextResponse.json({ error: "Service IA (Gemini & OpenAI) indisponible." }, { status: 502 });
     }
 
-    if (!CATEGORIES.includes(parsed.category)) {
-      parsed.category = "Alimentaire";
-    }
-
-    return NextResponse.json({
-      label: parsed.label ?? "",
-      amount: typeof parsed.amount === "number" ? parsed.amount : parseFloat(String(parsed.amount)) || 0,
-      category: parsed.category,
-      date: parsed.date ?? null,
-      confidence: parsed.confidence ?? 0.5,
-    });
   } catch (error) {
     console.error("Scan receipt failed:", error);
     return NextResponse.json({ error: "Erreur lors du scan." }, { status: 500 });
