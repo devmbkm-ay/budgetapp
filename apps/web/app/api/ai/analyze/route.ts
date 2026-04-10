@@ -32,8 +32,8 @@ Format : un conseil par ligne, sans numérotation.`
 
   const apiKey = process.env.GEMINI_API_KEY;
   
-  // Use gemini-2.0-flash as it is confirmed to be available for this key
-  const modelId = "gemini-2.0-flash";
+  // Use gemini-1.5-flash as gemini-2.0-flash is no longer available to new users
+  const modelId = "gemini-1.5-flash";
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     console.error("AI Analysis failed:", error);
     return NextResponse.json(
       { error: "Le service IA est momentanément indisponible." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
