@@ -31,7 +31,8 @@ Format : un conseil par ligne, sans numérotation.`
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
-  const modelId = "gemini-1.5-flash";
+  // Use gemini-1.5-flash-latest and v1 endpoint for better compatibility
+  const modelId = "gemini-1.5-flash-latest";
 
   if (!apiKey) {
     console.error("[DEBUG] GEMINI_API_KEY is missing in environment variables");
@@ -40,7 +41,8 @@ Format : un conseil par ligne, sans numérotation.`
 
   try {
     console.log(`[DEBUG] Attempting Gemini API call with model: ${modelId}`);
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+    // Changed v1beta to v1
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(prompt),
