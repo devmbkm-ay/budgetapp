@@ -21,6 +21,7 @@ model User {
   budgetGoals         BudgetGoal[]
   recurringTransactions RecurringTransaction[]
   budgetAlerts        BudgetAlert[]
+  savingsGoals        SavingsGoal[]
   assets              Asset[]
   liabilities         Liability[]
   netWorthSnapshots   NetWorthSnapshot[]
@@ -73,6 +74,21 @@ model RecurringTransaction {
   userId          String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// Savings Goals - Target-based saving tracker
+model SavingsGoal {
+  id            String    @id @default(uuid())
+  label         String
+  targetAmount  Float
+  currentAmount Float     @default(0)
+  targetDate    DateTime?
+  currency      String    @default("EUR")
+  emoji         String?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 // Assets - Net Worth tracking

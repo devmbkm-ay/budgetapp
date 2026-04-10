@@ -341,6 +341,15 @@ export async function listTransactionsByDateRange(
 }
 
 export {
+  createSavingsGoal,
+  getSavingsGoals,
+  updateSavingsGoal,
+  deleteSavingsGoal,
+  type SavingsGoalRecord,
+  type CreateSavingsGoalInput,
+} from "./savings-functions";
+
+export {
   createAsset,
   getAssets,
   updateAsset,

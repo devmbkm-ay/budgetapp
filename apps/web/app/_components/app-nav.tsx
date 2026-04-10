@@ -8,6 +8,7 @@ const BASE_NAV_ITEMS = [
   { href: "/transactions", label: "Transactions" },
   { href: "/budget-goals", label: "Budgets" },
   { href: "/net-worth", label: "Patrimoine" },
+  { href: "/savings-goals", label: "Objectifs" },
   { href: "/stats", label: "Prévisions" },
   { href: "/transactions/add", label: "Ajouter" },
 ];
