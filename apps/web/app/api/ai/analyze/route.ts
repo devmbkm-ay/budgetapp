@@ -31,11 +31,15 @@ Format : un conseil par ligne, sans numérotation.`
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
-  
-  // Use gemini-1.5-flash as gemini-2.0-flash is no longer available to new users
   const modelId = "gemini-1.5-flash";
 
+  if (!apiKey) {
+    console.error("[DEBUG] GEMINI_API_KEY is missing in environment variables");
+    throw new Error("GEMINI_API_KEY is not configured");
+  }
+
   try {
+    console.log(`[DEBUG] Attempting Gemini API call with model: ${modelId}`);
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,8 +67,8 @@ Format : un conseil par ligne, sans numérotation.`
         analysis_date: new Date().toISOString(),
       },
     };
-  } catch (err) {
-    console.error(`[DEBUG] generateInsightsWithGemini (${modelId}) failed:`, err);
+  } catch (err: any) {
+    console.error(`[DEBUG] generateInsightsWithGemini (${modelId}) failed:`, err.message);
     throw err;
   }
 }
@@ -99,11 +103,17 @@ Nombre de transactions: ${transactions.length}
 
 Fournissez des conseils: actionnables, positifs, en français. Un conseil par ligne, sans numérotation.`;
 
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+        console.warn("[DEBUG] OPENAI_API_KEY missing, falling back to Gemini immediately");
+        return generateInsightsWithGemini(transactions);
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
@@ -113,10 +123,9 @@ Fournissez des conseils: actionnables, positifs, en français. Un conseil par li
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return generateInsightsWithGemini(transactions);
-      }
-      throw new Error(`OpenAI error: ${response.status}`);
+      const errorText = await response.text();
+      console.warn(`[DEBUG] OpenAI API failed (${response.status}): ${errorText}. Falling back to Gemini...`);
+      return generateInsightsWithGemini(transactions);
     }
 
     const data = await response.json() as { choices: Array<{ message: { content: string } }> };
@@ -135,19 +144,21 @@ Fournissez des conseils: actionnables, positifs, en français. Un conseil par li
         transaction_count: transactions.length,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
+    console.warn(`[DEBUG] generateInsights failed: ${error.message}. Falling back to Gemini...`);
     return generateInsightsWithGemini(transactions);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getSession(request);
-
-  if (!session) {
-    return NextResponse.json({ error: "Session invalide." }, { status: 401 });
-  }
-
   try {
+    const session = await getSession(request);
+
+    if (!session) {
+      console.warn("[DEBUG] Unauthorized access attempt: No valid session");
+      return NextResponse.json({ error: "Session invalide." }, { status: 401 });
+    }
+
     const transactions = await listTransactions(session.email);
 
     if (transactions.length < 3) {
@@ -159,10 +170,13 @@ export async function POST(request: NextRequest) {
 
     const analysis = await generateInsights(transactions);
     return NextResponse.json(analysis);
-  } catch (error) {
-    console.error("AI Analysis failed:", error);
+  } catch (error: any) {
+    console.error("[CRITICAL] API Route /api/ai/analyze failed:", error);
     return NextResponse.json(
-      { error: "Le service IA est momentanément indisponible." },
+      { 
+        error: "Le service IA est momentanément indisponible.",
+        details: process.env.NODE_ENV === "development" ? error.message : undefined 
+      },
       { status: 500 }
     );
   }
