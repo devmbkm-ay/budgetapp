@@ -317,7 +317,7 @@ export default function MobileFintechAdd() {
                     <div style={{ ...styles.successPanel, boxShadow: palette.actionShadow }}>
                         <div style={{ ...styles.successHalo, background: `radial-gradient(circle, ${palette.accentGlow} 0%, rgba(255,255,255,0) 70%)` }} />
                         <div style={{ ...styles.successCheck, background: palette.toggleActive }}>✓</div>
-                        <p style={styles.successEyebrow}>Transaction enregistree</p>
+                        <p style={styles.successEyebrow}>Transaction enregistrée avec succès</p>
                         <div style={{ ...styles.previewCard, ...styles.previewCardSuccess, borderColor: `${accentColor}55` }}>
                             <div style={styles.previewTopRow}>
                                 <div style={styles.previewBadge}>
@@ -334,8 +334,8 @@ export default function MobileFintechAdd() {
                             <h3 style={styles.previewTitle}>{savedTransaction.label}</h3>
                             <p style={styles.previewNarrative}>
                                 {savedTransaction.type === "expense"
-                                    ? "La depense a ete ajoutee a votre timeline budget."
-                                    : "Le revenu a ete ajoute a votre flux financier."}
+                                    ? "La dépense a été ajoutée à votre budget."
+                                    : "Le revenu a été ajouté à votre compte."}
                             </p>
                             {savedTransaction.note ? (
                                 <p style={styles.previewNote}>“{savedTransaction.note}”</p>
@@ -355,16 +355,23 @@ export default function MobileFintechAdd() {
                                 }}
                                 style={{ ...styles.successButton, ...styles.secondarySuccessButton }}
                             >
-                                Ajouter une autre
+                                En ajouter une autre
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setSavedTransaction(null)}
+                                onClick={() => window.history.back()}
                                 style={{ ...styles.successButton, background: palette.toggleActive }}
                             >
-                                Revenir au formulaire
+                                Terminer
                             </button>
                         </div>
+                        <button 
+                            type="button" 
+                            onClick={() => window.history.back()} 
+                            style={styles.closeModalX}
+                        >
+                            ✕
+                        </button>
                     </div>
                 </div>
             ) : null}
@@ -1163,5 +1170,22 @@ const styles: Record<string, CSSProperties> = {
     secondarySuccessButton: {
         background: "rgba(255,255,255,0.08)",
         border: "1px solid rgba(255,255,255,0.14)",
+    },
+    closeModalX: {
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        color: "rgba(255,255,255,0.5)",
+        width: "32px",
+        height: "32px",
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        fontSize: "14px",
+        zIndex: 10,
     },
 };
