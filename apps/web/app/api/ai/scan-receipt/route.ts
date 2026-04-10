@@ -62,6 +62,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Session invalide." }, { status: 401 });
   }
 
+  // Initialisation d'une réponse par défaut (Fallback manuel)
+  // Cela permet au formulaire de se remplir même si toutes les IA échouent
+  const defaultData = {
+    label: "Scan effectué (Saisie manuelle requise)",
+    amount: 0,
+    category: "Alimentaire",
+    date: new Date().toISOString().split('T')[0],
+    confidence: 0,
+    method: "none"
+  };
+
   try {
     const body = await request.json() as { image: string; mimeType?: string };
     if (!body.image) {
@@ -70,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const mimeType = body.mimeType ?? "image/jpeg";
 
-    // 1. Essayer OpenAI (si clé présente et quota ok)
+    // 1. Tentative OpenAI (gpt-4o-mini)
     if (process.env.OPENAI_API_KEY) {
       try {
         const prompt = `Tu es un scanner de ticket de caisse. Extrais les informations de cette image et retourne UNIQUEMENT un objet JSON valide avec ces champs:
@@ -112,25 +123,30 @@ Retourne UNIQUEMENT le JSON.`;
           const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
           const parsed = JSON.parse(cleaned);
           return NextResponse.json({ ...parsed, method: "openai" });
-        } else {
-          console.warn("OpenAI fallback triggered due to status:", response.status);
         }
       } catch (e) {
-        console.warn("OpenAI scan failed, falling back to Gemini:", e);
+        console.warn("[SCAN] OpenAI failed, trying Gemini...");
       }
     }
 
-    // 2. Fallback Gemini
+    // 2. Tentative Gemini Vision
     try {
       const parsed = await scanWithGemini(body.image, mimeType);
       return NextResponse.json({ ...parsed, method: "gemini" });
     } catch (err) {
-      console.error("Gemini scan failed:", err);
-      return NextResponse.json({ error: "Service IA (Gemini & OpenAI) indisponible." }, { status: 502 });
+      console.error("[SCAN] Gemini failed as well:", err);
+      
+      // 3. ULTIME FALLBACK : Au lieu de renvoyer une erreur 502/500,
+      // on renvoie un objet "vide" mais valide pour que le formulaire s'ouvre.
+      return NextResponse.json({ 
+        ...defaultData, 
+        error: "L'IA n'a pas pu analyser l'image, veuillez remplir les champs manuellement." 
+      });
     }
 
   } catch (error) {
-    console.error("Scan receipt failed:", error);
-    return NextResponse.json({ error: "Erreur lors du scan." }, { status: 500 });
+    console.error("Scan receipt critical failure:", error);
+    // Même en cas d'erreur de parsing JSON ou autre, on renvoie du data par défaut
+    return NextResponse.json(defaultData);
   }
 }
