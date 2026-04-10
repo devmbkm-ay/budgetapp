@@ -31,47 +31,51 @@ Format : un conseil par ligne, sans numérotation.`
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
-  // Final correction attempt: gemini-1.5-flash with v1beta
-  const modelId = "gemini-1.5-flash";
 
   if (!apiKey) {
     console.error("[DEBUG] GEMINI_API_KEY is missing in environment variables");
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  try {
-    console.log(`[DEBUG] Attempting Gemini API call with model: ${modelId} on v1beta`);
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(prompt),
-    });
+  // List of models to try in order of likelihood to work
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+  
+  for (const modelId of modelsToTry) {
+    try {
+      console.log(`[DEBUG] Trying Gemini model: ${modelId} on v1`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prompt),
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`[DEBUG] Gemini API Error ${response.status}:`, errorBody);
-      throw new Error(`Gemini error: ${response.status} - ${errorBody}`);
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        const insights = text.split("\n")
+          .map((l: string) => l.trim())
+          .filter((l: string) => l.length > 0)
+          .slice(0, 3);
+
+        console.log(`[DEBUG] Successfully used model: ${modelId}`);
+        return {
+          summary: `Analyse intelligente (${modelId}) de vos ${transactions.length} opérations.`,
+          insights,
+          metadata: {
+            model: modelId,
+            analysis_date: new Date().toISOString(),
+          },
+        };
+      } else {
+        const errorBody = await response.text();
+        console.warn(`[DEBUG] Model ${modelId} failed (${response.status}): ${errorBody}`);
+      }
+    } catch (err: any) {
+      console.warn(`[DEBUG] Attempt with ${modelId} crashed: ${err.message}`);
     }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const insights = text.split("\n")
-      .map((l: string) => l.trim())
-      .filter((l: string) => l.length > 0)
-      .slice(0, 3);
-
-    return {
-      summary: `Analyse intelligente (${modelId}) de vos ${transactions.length} opérations.`,
-      insights,
-      metadata: {
-        model: modelId,
-        analysis_date: new Date().toISOString(),
-      },
-    };
-  } catch (err: any) {
-    console.error(`[DEBUG] generateInsightsWithGemini (${modelId}) failed:`, err.message);
-    throw err;
   }
+
+  throw new Error("All Gemini models failed. Please check if the API Key has the 'Generative Language API' enabled in Google Cloud Console.");
 }
 
 async function generateInsights(transactions: TransactionRecord[]) {
