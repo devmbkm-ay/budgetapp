@@ -21,6 +21,9 @@ model User {
   budgetGoals         BudgetGoal[]
   recurringTransactions RecurringTransaction[]
   budgetAlerts        BudgetAlert[]
+  assets              Asset[]
+  liabilities         Liability[]
+  netWorthSnapshots   NetWorthSnapshot[]
   createdAt           DateTime              @default(now())
 }
 
@@ -70,6 +73,45 @@ model RecurringTransaction {
   userId          String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// Assets - Net Worth tracking
+model Asset {
+  id        String   @id @default(uuid())
+  label     String
+  value     Float
+  type      String   // "cash", "crypto", "investment", "property", "other"
+  currency  String   @default("EUR")
+  note      String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Liabilities - Net Worth tracking
+model Liability {
+  id        String   @id @default(uuid())
+  label     String
+  balance   Float
+  type      String   // "loan", "credit", "mortgage", "other"
+  currency  String   @default("EUR")
+  note      String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Net Worth Snapshots - Historical tracking
+model NetWorthSnapshot {
+  id               String   @id @default(uuid())
+  totalAssets      Float
+  totalLiabilities Float
+  netWorth         Float
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  createdAt        DateTime @default(now())
 }
 
 // Budget Alerts - Notifications

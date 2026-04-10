@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 const BASE_NAV_ITEMS = [
   { href: "/transactions", label: "Transactions" },
   { href: "/budget-goals", label: "Budgets" },
+  { href: "/net-worth", label: "Patrimoine" },
   { href: "/transactions/add", label: "Ajouter" },
 ];
 

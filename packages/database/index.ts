@@ -341,6 +341,24 @@ export async function listTransactionsByDateRange(
 }
 
 export {
+  createAsset,
+  getAssets,
+  updateAsset,
+  deleteAsset,
+  createLiability,
+  getLiabilities,
+  updateLiability,
+  deleteLiability,
+  saveNetWorthSnapshot,
+  getNetWorthHistory,
+  type AssetRecord,
+  type LiabilityRecord,
+  type NetWorthSnapshotRecord,
+  type CreateAssetInput,
+  type CreateLiabilityInput,
+} from "./net-worth-functions";
+
+export {
   createBudgetGoal,
   getBudgetGoals,
   deleteBudgetGoal,
