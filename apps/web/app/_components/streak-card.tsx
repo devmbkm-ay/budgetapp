@@ -55,7 +55,7 @@ export function StreakCard({ transactions }: Props) {
   // Current streak: consecutive green days going back from today
   let currentStreak = 0;
   for (let i = calendar.length - 1; i >= 0; i--) {
-    if (calendar[i].isGreen) currentStreak++;
+    if (calendar[i]?.isGreen) currentStreak++;
     else break;
   }
 
