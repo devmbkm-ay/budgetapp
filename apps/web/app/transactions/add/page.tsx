@@ -140,6 +140,7 @@ export default function MobileFintechAdd() {
         ? initialBalance + (isExpense ? -amountValue : amountValue)
         : null;
     const isSubmitDisabled = isSubmitting || amountValue <= 0 || (isExpense && !label.trim());
+    const isFormReady = amountValue > 0;
     const formattedPreviewAmount = `${isExpense ? "-" : "+"} ${amountValue.toFixed(2)} €`;
     const amountInteger = `${isExpense ? "-" : "+"}${Math.floor(amountValue).toString()}`;
     const amountDecimals = amountValue.toFixed(2).split(".")[1] ?? "00";
@@ -606,7 +607,10 @@ export default function MobileFintechAdd() {
                             style={{
                                 ...styles.submitButton,
                                 background: `linear-gradient(135deg, ${accentColor}, ${palette.secondaryGlow})`,
-                                opacity: isSubmitDisabled ? 0.5 : 1,
+                                opacity: isFormReady ? (isSubmitDisabled ? 0.5 : 1) : 0,
+                                transform: isFormReady ? "translateY(0)" : "translateY(16px)",
+                                pointerEvents: isFormReady ? "auto" : "none",
+                                transition: "opacity 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
                                 boxShadow: palette.actionShadow,
                             }}
                         >
