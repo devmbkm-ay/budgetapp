@@ -44,7 +44,8 @@ async function generateVisionInsightsWithGemini(imageBase64: string) {
     });
 
     if (!response.ok) {
-        throw new Error(`Gemini Vision API error: ${response.status}`);
+        const errorBody = await response.text();
+        throw new Error(`Gemini Vision API error (${response.status}): ${errorBody}`);
     }
 
     const data: any = await response.json();
@@ -52,7 +53,12 @@ async function generateVisionInsightsWithGemini(imageBase64: string) {
     
     // Nettoyer le JSON potentiel (enlever les markdown blocks)
     const jsonStr = text.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonStr);
+    try {
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        console.error("Failed to parse Gemini Vision JSON:", text);
+        throw new Error("Invalid JSON returned from AI");
+    }
 }
 
 /**
@@ -92,21 +98,43 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
         set.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
         set.headers["Access-Control-Allow-Headers"] = "Content-Type";
     })
+    /**
+     * POST /ai/analyze-trends
+     * Analyse les transactions pour des insights personnalisés
+     */
     .post("/analyze-trends", async ({ body, set }) => {
         try {
             const transactions = await listTransactions(body.userEmail);
+
             if (transactions.length < 3) {
-                return { summary: "Analyse indisponible.", insights: ["Ajoute au moins 3 transactions."] };
+                return {
+                    summary: "Analyse indisponible.",
+                    insights: ["Ajoute au moins 3 transactions pour activer le cerveau de l'IA."]
+                };
             }
-            // Logic for trends (kept as is)
-            return { summary: "Trends analyzed", insights: [] };
+
+            // Simple logic for now as trends use Gemini fallback which is currently 404
+            return {
+                summary: `Analyse de vos ${transactions.length} opérations.`,
+                insights: ["Analyse IA en cours de maintenance..."],
+                metadata: { analysis_date: new Date().toISOString() }
+            };
+
         } catch (error) {
+            console.error("[AI SERVICE ERROR]", error);
             set.status = 500;
-            return { error: String(error) };
+            return { error: "Erreur lors de l'analyse IA", details: String(error) };
         }
     }, {
-        body: t.Object({ userEmail: t.String() })
+        body: t.Object({
+            userEmail: t.String(),
+            period: t.Optional(t.String())
+        })
     })
+    /**
+     * POST /ai/scan-receipt
+     * Scanne une image de ticket via Gemini Vision ou OCR
+     */
     .post("/scan-receipt", async ({ body, set }) => {
         try {
             if (!body.image) {
@@ -116,20 +144,26 @@ export const aiServiceRoute = new Elysia({ prefix: "/ai" })
 
             try {
                 // Tentative avec Gemini Vision
+                console.log("[SCAN] Attempting Gemini Vision analysis...");
                 const aiResult = await generateVisionInsightsWithGemini(body.image);
                 return { ...aiResult, method: "Gemini-Vision" };
-            } catch (err) {
-                console.warn("[AI SCAN FALLBACK] Gemini Vision failed, using OCR...", err);
-                return await scanReceiptWithOCR(body.image);
+            } catch (err: any) {
+                console.warn("[AI SCAN FALLBACK] Gemini Vision failed, using OCR...", err.message);
+                const ocrResult = await scanReceiptWithOCR(body.image);
+                return { ...ocrResult, error: err.message };
             }
 
         } catch (error) {
             console.error("[SCAN ERROR]", error);
             set.status = 500;
-            return { error: "Erreur lors du scan", details: String(error) };
+            return {
+                error: "Erreur lors du scan",
+                details: String(error)
+            };
         }
     }, {
         body: t.Object({
-            image: t.String({ description: "Image du reçu en base64" })
+            image: t.String({ description: "Image du reçu en base64" }),
+            userEmail: t.Optional(t.String())
         })
     });
