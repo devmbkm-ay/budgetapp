@@ -30,12 +30,13 @@ Format : un conseil par ligne, sans numérotation.`
     }]
   };
 
-  // Cache buster comment to force Vercel build update: v2026.04.10.0100
   const apiKey = process.env.GEMINI_API_KEY;
-  console.log(`[DEBUG] Attempting Gemini call with key: ${apiKey ? (apiKey.substring(0, 5) + '...') : 'MISSING'}`);
+  
+  // Use gemini-2.0-flash as it is confirmed to be available for this key
+  const modelId = "gemini-2.0-flash";
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(prompt),
@@ -55,21 +56,20 @@ Format : un conseil par ligne, sans numérotation.`
       .slice(0, 3);
 
     return {
-      summary: `Analyse intelligente (Gemini) de vos ${transactions.length} opérations.`,
+      summary: `Analyse intelligente (${modelId}) de vos ${transactions.length} opérations.`,
       insights,
       metadata: {
-        model: "gemini-1.5-flash",
+        model: modelId,
         analysis_date: new Date().toISOString(),
       },
     };
   } catch (err) {
-    console.error("[DEBUG] generateInsightsWithGemini failed:", err);
+    console.error(`[DEBUG] generateInsightsWithGemini (${modelId}) failed:`, err);
     throw err;
   }
 }
 
 async function generateInsights(transactions: TransactionRecord[]) {
-  // Try OpenAI first, fallback to Gemini
   try {
     const expenses = transactions.filter((t) => t.type === "expense");
     const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
@@ -114,7 +114,6 @@ Fournissez des conseils: actionnables, positifs, en français. Un conseil par li
 
     if (!response.ok) {
       if (response.status === 429) {
-        console.warn("OpenAI quota reached, falling back to Gemini...");
         return generateInsightsWithGemini(transactions);
       }
       throw new Error(`OpenAI error: ${response.status}`);
@@ -137,7 +136,6 @@ Fournissez des conseils: actionnables, positifs, en français. Un conseil par li
       },
     };
   } catch (error) {
-    console.error("OpenAI failed, trying Gemini fallback...", error);
     return generateInsightsWithGemini(transactions);
   }
 }
