@@ -30,31 +30,41 @@ Format : un conseil par ligne, sans numérotation.`
     }]
   };
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(prompt),
-  });
+  const apiKey = process.env.GEMINI_API_KEY;
+  console.log(`[DEBUG] Attempting Gemini call with key: ${apiKey ? (apiKey.substring(0, 5) + '...') : 'MISSING'}`);
 
-  if (!response.ok) {
-    throw new Error(`Gemini error: ${response.status}`);
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(prompt),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[DEBUG] Gemini API Error ${response.status}:`, errorBody);
+      throw new Error(`Gemini error: ${response.status} - ${errorBody}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const insights = text.split("\n")
+      .map((l: string) => l.trim())
+      .filter((l: string) => l.length > 0)
+      .slice(0, 3);
+
+    return {
+      summary: `Analyse intelligente (Gemini) de vos ${transactions.length} opérations.`,
+      insights,
+      metadata: {
+        model: "gemini-1.5-flash",
+        analysis_date: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    console.error("[DEBUG] generateInsightsWithGemini failed:", err);
+    throw err;
   }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  const insights = text.split("\n")
-    .map((l: string) => l.trim())
-    .filter((l: string) => l.length > 0)
-    .slice(0, 3);
-
-  return {
-    summary: `Analyse intelligente (Gemini) de vos ${transactions.length} opérations.`,
-    insights,
-    metadata: {
-      model: "gemini-1.5-flash",
-      analysis_date: new Date().toISOString(),
-    },
-  };
 }
 
 async function generateInsights(transactions: TransactionRecord[]) {
