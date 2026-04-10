@@ -71,6 +71,11 @@ export function AppNav() {
     return moreActive ? 4 : -1;
   })();
 
+  // Which "more" item is currently active (if any)
+  const activeMoreItem =
+    MORE.find((m) => pathname === m.href || pathname.startsWith(m.href + "/")) ??
+    (pathname.startsWith("/profile") ? { emoji: "👤", label: "Profil" } : null);
+
   const logout = async () => {
     await fetch("/api/auth/session", { method: "DELETE" });
     setUser(null);
@@ -165,9 +170,11 @@ export function AppNav() {
           aria-haspopup="menu"
         >
           <span className="nav-item-emoji" style={{ transition: "transform 0.25s ease", transform: moreOpen ? "rotate(45deg)" : "none" }}>
-            ⊕
+            {moreOpen ? "⊕" : activeMoreItem ? activeMoreItem.emoji : "⊕"}
           </span>
-          <span className="nav-item-label">Plus</span>
+          <span className="nav-item-label">
+            {!moreOpen && activeMoreItem ? activeMoreItem.label : "Plus"}
+          </span>
         </button>
       </nav>
     </div>
