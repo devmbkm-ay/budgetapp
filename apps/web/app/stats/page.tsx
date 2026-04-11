@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, type CSSProperties } from "react";
+import { MonthlyBarChart } from "../_components/monthly-bar-chart";
 
 interface ForecastSummary {
   averageDailyExpense: number;
@@ -247,6 +248,12 @@ export default function StatsPage() {
             </div>
           </section>
         )}
+
+        {/* Monthly income vs expenses chart */}
+        <section style={s.panel}>
+          <p style={s.panelLabel}>6 derniers mois</p>
+          <MonthlyBarChart />
+        </section>
 
         {/* Comparison vs last month */}
         <section style={s.panel}>
