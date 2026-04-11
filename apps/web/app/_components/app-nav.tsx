@@ -20,6 +20,7 @@ const PRIMARY = [
 const MORE = [
   { href: "/net-worth", label: "Patrimoine", emoji: "🏦" },
   { href: "/savings-goals", label: "Objectifs", emoji: "🪙" },
+  { href: "/recurring", label: "Récurrents", emoji: "🔄" },
 ];
 
 export function AppNav() {
@@ -197,9 +198,11 @@ export function AppNav() {
           aria-label={moreOpen ? "Fermer le menu supplémentaire" : "Afficher plus d'options"}
         >
           <span className="nav-item-emoji" style={{ transition: "transform 0.25s ease", transform: moreOpen ? "rotate(45deg)" : "none" }}>
-            ⊕
+            {!moreOpen && activeMoreItem ? activeMoreItem.emoji : "⊕"}
           </span>
-          <span className="nav-item-label">Plus</span>
+          <span className="nav-item-label">
+            {!moreOpen && activeMoreItem ? activeMoreItem.label : "Plus"}
+          </span>
         </button>
       </nav>
     </div>

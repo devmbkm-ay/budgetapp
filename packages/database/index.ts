@@ -374,6 +374,7 @@ export {
   createRecurringTransaction,
   getRecurringTransactions,
   toggleRecurringTransaction,
+  deleteRecurringTransaction,
   filterTransactions,
   batchDeleteTransactions,
   batchUpdateTransactions,
@@ -382,4 +383,5 @@ export {
   markAlertAsRead,
   type FilterOptions,
   type BudgetAlertData,
+  type RecurringTransactionRecord,
 } from "./budget-functions";

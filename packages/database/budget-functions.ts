@@ -106,21 +106,63 @@ export async function createRecurringTransaction(
     };
 }
 
-export async function getRecurringTransactions(userEmail: string): Promise<Array<{ id: string; label: string; frequency: string; isActive: boolean }>> {
+export interface RecurringTransactionRecord {
+    id: string;
+    label: string;
+    amount: number;
+    currency: string;
+    category: string | null;
+    type: string;
+    frequency: string;
+    startDate: string;
+    endDate: string | null;
+    lastGeneratedAt: string | null;
+    isActive: boolean;
+}
+
+export async function getRecurringTransactions(userEmail: string): Promise<RecurringTransactionRecord[]> {
     const user = await prisma.user.findUniqueOrThrow({
         where: { email: userEmail },
     });
 
     const recurring = await prisma.recurringTransaction.findMany({
         where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
     });
 
     return recurring.map((r) => ({
         id: r.id,
         label: r.label,
+        amount: Math.abs(r.amount),
+        currency: r.currency,
+        category: r.category,
+        type: r.type,
         frequency: r.frequency,
+        startDate: r.startDate.toISOString(),
+        endDate: r.endDate ? r.endDate.toISOString() : null,
+        lastGeneratedAt: r.lastGeneratedAt ? r.lastGeneratedAt.toISOString() : null,
         isActive: r.isActive,
     }));
+}
+
+export async function deleteRecurringTransaction(recurringId: string, userEmail: string): Promise<boolean> {
+    const user = await prisma.user.findUniqueOrThrow({
+        where: { email: userEmail },
+    });
+
+    const recurring = await prisma.recurringTransaction.findUniqueOrThrow({
+        where: { id: recurringId },
+    });
+
+    if (recurring.userId !== user.id) {
+        throw new Error("Unauthorized");
+    }
+
+    await prisma.recurringTransaction.delete({
+        where: { id: recurringId },
+    });
+
+    return true;
 }
 
 export async function toggleRecurringTransaction(recurringId: string, userEmail: string): Promise<boolean> {
