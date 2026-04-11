@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AnomalyCard } from "../_components/anomaly-card";
 import { AssistantFeed } from "../_components/assistant-feed";
 import { BudgetAlerts } from "../_components/budget-alerts";
 import { CategoryPressureCard } from "../_components/category-pressure-card";
@@ -306,6 +307,10 @@ export default function TransactionsPage() {
 
         <section style={{ padding: "2rem 0", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
           <BudgetAlerts />
+        </section>
+
+        <section style={{ padding: "1.5rem 0", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+          <AnomalyCard />
         </section>
 
         <section style={styles.insightsShell}>
