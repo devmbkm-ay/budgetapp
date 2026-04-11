@@ -33,6 +33,8 @@ export default function TransactionsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
 
   useEffect(() => {
     let mounted = true;
@@ -127,6 +129,22 @@ export default function TransactionsPage() {
       mounted = false;
     };
   }, []);
+
+  const filteredTransactions = useMemo(() => {
+    let result = transactions;
+    if (typeFilter !== "all") {
+      result = result.filter((t) => t.type === typeFilter);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (t) =>
+          t.label.toLowerCase().includes(q) ||
+          (t.category ?? "").toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [transactions, search, typeFilter]);
 
   const timelineTotals = useMemo(() => {
     return transactions.reduce(
@@ -372,8 +390,54 @@ export default function TransactionsPage() {
               <p style={styles.cardLabel}>Timeline</p>
               <h2 style={styles.listTitle}>Mouvements recents</h2>
             </div>
-            <span style={styles.countPill}>{transactions.length} lignes</span>
+            <span style={styles.countPill}>
+              {filteredTransactions.length !== transactions.length
+                ? `${filteredTransactions.length} / ${transactions.length}`
+                : `${transactions.length} lignes`}
+            </span>
           </div>
+
+          {/* Search + filter bar */}
+          {transactions.length > 0 && (
+            <div style={styles.searchBar}>
+              <div style={styles.searchInputWrap}>
+                <span style={styles.searchIcon}>🔍</span>
+                <input
+                  style={styles.searchInput}
+                  type="search"
+                  placeholder="Rechercher par libellé ou catégorie…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Rechercher une transaction"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    style={styles.searchClear}
+                    onClick={() => setSearch("")}
+                    aria-label="Effacer la recherche"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div style={styles.filterChips}>
+                {(["all", "expense", "income"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    style={{
+                      ...styles.filterChip,
+                      ...(typeFilter === f ? styles.filterChipActive : {}),
+                    }}
+                    onClick={() => setTypeFilter(f)}
+                  >
+                    {f === "all" ? "Tous" : f === "expense" ? "💸 Dépenses" : "💰 Revenus"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isLoading ? (
             <div style={styles.statePanel}>Chargement des transactions...</div>
@@ -398,9 +462,18 @@ export default function TransactionsPage() {
             </div>
           ) : null}
 
-          {!isLoading && !error && transactions.length > 0 ? (
+          {!isLoading && !error && transactions.length > 0 && filteredTransactions.length === 0 ? (
+            <div style={styles.statePanel}>
+              <p style={styles.emptyTitle}>Aucun résultat.</p>
+              <p style={styles.emptyBody}>
+                Aucune transaction ne correspond à «&nbsp;{search}&nbsp;». Essayez un autre terme.
+              </p>
+            </div>
+          ) : null}
+
+          {!isLoading && !error && filteredTransactions.length > 0 ? (
             <div style={styles.timeline}>
-              {transactions.map((transaction) => {
+              {filteredTransactions.map((transaction) => {
                 const accent = transaction.type === "income" ? "#7ff0b6" : "#ff8e87";
                 const amountPrefix = transaction.type === "income" ? "+" : "-";
 
@@ -797,6 +870,71 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#ffb2ad",
     fontSize: "0.76rem",
     fontWeight: 700,
+  },
+  searchBar: {
+    marginBottom: "18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  searchInputWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "14px",
+    fontSize: "0.95rem",
+    pointerEvents: "none",
+    userSelect: "none",
+  },
+  searchInput: {
+    width: "100%",
+    padding: "12px 40px 12px 40px",
+    borderRadius: "16px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#f6fbff",
+    fontSize: "0.95rem",
+    fontFamily: "inherit",
+    outline: "none",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    transition: "border-color 0.18s ease",
+  },
+  searchClear: {
+    position: "absolute",
+    right: "12px",
+    background: "none",
+    border: "none",
+    color: "rgba(208,224,255,0.45)",
+    cursor: "pointer",
+    fontSize: "0.8rem",
+    padding: "4px",
+    fontFamily: "inherit",
+  },
+  filterChips: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  filterChip: {
+    padding: "7px 14px",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.06)",
+    color: "rgba(208,224,255,0.65)",
+    fontSize: "0.80rem",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    transition: "all 0.15s ease",
+  },
+  filterChipActive: {
+    background: "rgba(100,210,255,0.15)",
+    borderColor: "rgba(100,210,255,0.40)",
+    color: "#64d2ff",
   },
   aiContainer: {
     marginTop: "20px",

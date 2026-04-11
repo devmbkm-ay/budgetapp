@@ -60,7 +60,7 @@ function nextOccurrence(startDate: string, frequency: string): string {
   return next.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-const s: Record<string, React.CSSProperties> = {
+const s = {
   page: {
     minHeight: "100dvh",
     padding: "24px 16px 120px",
@@ -163,7 +163,7 @@ const s: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "13px",
     borderRadius: 14,
-    border: "none",
+    border: `1.5px solid ${disabled ? "rgba(100,210,255,0.08)" : "rgba(100,210,255,0.35)"}`,
     background: disabled
       ? "rgba(100,210,255,0.10)"
       : "linear-gradient(135deg, rgba(100,210,255,0.30), rgba(127,240,182,0.20))",
@@ -174,11 +174,10 @@ const s: Record<string, React.CSSProperties> = {
     fontFamily: "inherit",
     marginTop: 12,
     transition: "all 0.2s ease",
-    border: `1.5px solid ${disabled ? "rgba(100,210,255,0.08)" : "rgba(100,210,255,0.35)"}` as unknown as string,
   }),
   list: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column" as const,
     gap: 12,
   },
   card: (isActive: boolean): React.CSSProperties => ({
@@ -265,7 +264,7 @@ const s: Record<string, React.CSSProperties> = {
     transition: "all 0.15s ease",
   }),
   empty: {
-    textAlign: "center",
+    textAlign: "center" as const,
     padding: "48px 24px",
     color: "rgba(208,224,255,0.35)",
   },
