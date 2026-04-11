@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Anomaly } from "../api/anomalies/route";
+
+interface Anomaly {
+  id: string;
+  type: "unusual_amount" | "category_spike" | "large_transaction";
+  severity: "warning" | "alert";
+  message: string;
+  detail: string;
+  amount?: number;
+  category?: string;
+  transactionId?: string;
+  transactionLabel?: string;
+}
 
 const TYPE_META: Record<Anomaly["type"], { icon: string; label: string }> = {
   unusual_amount: { icon: "📊", label: "Montant inhabituel" },

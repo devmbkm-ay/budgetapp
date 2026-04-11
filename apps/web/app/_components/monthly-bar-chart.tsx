@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MonthData } from "../api/insights/monthly/route";
+
+interface MonthData {
+  month: string;
+  label: string;
+  income: number;
+  expenses: number;
+  balance: number;
+}
 
 function eur(n: number) {
   return new Intl.NumberFormat("fr-FR", {
@@ -149,9 +156,8 @@ export function MonthlyBarChart() {
                 }
                 style={{
                   transition: animated
-                    ? "y 0.55s cubic-bezier(0.34,1.2,0.64,1), height 0.55s cubic-bezier(0.34,1.2,0.64,1), fill 0.18s ease"
+                    ? `y 0.55s cubic-bezier(0.34,1.2,0.64,1) ${i * 55}ms, height 0.55s cubic-bezier(0.34,1.2,0.64,1) ${i * 55}ms, fill 0.18s ease`
                     : "none",
-                  transitionDelay: animated ? `${i * 55}ms` : "0ms",
                 }}
               />
 
@@ -171,9 +177,8 @@ export function MonthlyBarChart() {
                 }
                 style={{
                   transition: animated
-                    ? "y 0.55s cubic-bezier(0.34,1.2,0.64,1), height 0.55s cubic-bezier(0.34,1.2,0.64,1), fill 0.18s ease"
+                    ? `y 0.55s cubic-bezier(0.34,1.2,0.64,1) ${i * 55 + 25}ms, height 0.55s cubic-bezier(0.34,1.2,0.64,1) ${i * 55 + 25}ms, fill 0.18s ease`
                     : "none",
-                  transitionDelay: animated ? `${i * 55 + 25}ms` : "0ms",
                 }}
               />
 
