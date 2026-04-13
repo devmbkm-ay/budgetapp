@@ -1,3 +1,8 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Output as standalone to avoid .next prerendering issues
@@ -23,8 +28,10 @@ const nextConfig = {
     return config;
   },
 
-  // Fix for Next.js 16 Turbopack build error
-  turbopack: {},
+  // Point Turbopack at the monorepo root so it can resolve shared node_modules
+  turbopack: {
+    root: path.resolve(__dirname, '../..'),
+  },
 };
 
 export default nextConfig;

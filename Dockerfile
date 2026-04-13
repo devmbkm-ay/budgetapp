@@ -43,9 +43,6 @@ COPY . .
 # Generate Prisma client
 RUN bunx prisma generate --schema packages/database/prisma/schema.prisma || true
 
-# Link web node_modules to workspace root so Turbopack can resolve packages
-RUN ln -s /app/node_modules /app/apps/web/node_modules
-
 # Build web app and fail explicitly on error
 RUN cd apps/web && bun run build
 
