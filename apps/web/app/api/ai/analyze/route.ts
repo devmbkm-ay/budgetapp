@@ -73,8 +73,8 @@ Format : un conseil par ligne, sans numérotation.`
         const errorBody = await response.text();
         console.warn(`[DEBUG] Model ${modelId} failed (${response.status}): ${errorBody}`);
       }
-    } catch (err: any) {
-      console.warn(`[DEBUG] Attempt with ${modelId} crashed: ${err.message}`);
+    } catch (err) {
+      console.warn(`[DEBUG] Attempt with ${modelId} crashed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -152,8 +152,8 @@ Fournissez des conseils: actionnables, positifs, en français. Un conseil par li
         transaction_count: transactions.length,
       },
     };
-  } catch (error: any) {
-    console.warn(`[DEBUG] generateInsights failed: ${error.message}. Falling back to Gemini...`);
+  } catch (error) {
+    console.warn(`[DEBUG] generateInsights failed: ${error instanceof Error ? error.message : String(error)}. Falling back to Gemini...`);
     return generateInsightsWithGemini(transactions);
   }
 }
@@ -178,12 +178,12 @@ export async function POST(request: NextRequest) {
 
     const analysis = await generateInsights(transactions);
     return NextResponse.json(analysis);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[CRITICAL] API Route /api/ai/analyze failed:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Le service IA est momentanément indisponible.",
-        details: process.env.NODE_ENV === "development" ? error.message : undefined 
+        details: process.env.NODE_ENV === "development" ? (error instanceof Error ? error.message : String(error)) : undefined
       },
       { status: 500 }
     );

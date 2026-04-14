@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+// useContext is kept for useToast hook below
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -30,6 +31,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
+    const removeToast = useCallback((id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, []);
+
     const addToast = useCallback(
         (toast: Omit<Toast, 'id'>) => {
             const id = `toast-${Date.now()}-${Math.random()}`;
@@ -50,12 +55,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
             return id;
         },
-        []
+        [removeToast]
     );
-
-    const removeToast = useCallback((id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
 
     const clearAll = useCallback(() => {
         setToasts([]);
@@ -168,43 +169,3 @@ function ToastItem({
     );
 }
 
-/**
- * Convenience functions for common toast types
- */
-export const toast = {
-    success: (message: string, options?: Omit<Toast, 'type' | 'message' | 'id'>) => {
-        const context = useContext(ToastContext);
-        if (!context) {
-            console.warn('useToast must be used within ToastProvider');
-            return;
-        }
-        return context.addToast({ type: 'success', message, ...options });
-    },
-
-    error: (message: string, options?: Omit<Toast, 'type' | 'message' | 'id'>) => {
-        const context = useContext(ToastContext);
-        if (!context) {
-            console.warn('useToast must be used within ToastProvider');
-            return;
-        }
-        return context.addToast({ type: 'error', message, ...options });
-    },
-
-    warning: (message: string, options?: Omit<Toast, 'type' | 'message' | 'id'>) => {
-        const context = useContext(ToastContext);
-        if (!context) {
-            console.warn('useToast must be used within ToastProvider');
-            return;
-        }
-        return context.addToast({ type: 'warning', message, ...options });
-    },
-
-    info: (message: string, options?: Omit<Toast, 'type' | 'message' | 'id'>) => {
-        const context = useContext(ToastContext);
-        if (!context) {
-            console.warn('useToast must be used within ToastProvider');
-            return;
-        }
-        return context.addToast({ type: 'info', message, ...options });
-    },
-};

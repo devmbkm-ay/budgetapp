@@ -192,7 +192,7 @@ export default function SavingsGoalsPage() {
         {isFormOpen && (
           <section style={s.formCard}>
             <div style={s.formHalo} />
-            <h2 style={s.formTitle}>Nouvel objectif d'épargne</h2>
+            <h2 style={s.formTitle}>Nouvel objectif d&apos;épargne</h2>
             <form onSubmit={handleCreate} style={s.form}>
               {/* Emoji picker */}
               <div>
@@ -211,7 +211,7 @@ export default function SavingsGoalsPage() {
               </div>
               <div style={s.formGrid}>
                 <label style={s.fieldLabel}>
-                  Nom de l'objectif
+                  Nom de l&apos;objectif
                   <input
                     value={form.label}
                     onChange={(e) => setForm({ ...form, label: e.target.value })}
@@ -272,7 +272,7 @@ export default function SavingsGoalsPage() {
         ) : goals.length === 0 && !isFormOpen ? (
           <div style={s.statePanel}>
             <p style={s.emptyTitle}>Aucun objectif pour le moment</p>
-            <p style={s.emptyBody}>Créez votre premier objectif d'épargne pour commencer à planifier vos projets.</p>
+            <p style={s.emptyBody}>Créez votre premier objectif d&apos;épargne pour commencer à planifier vos projets.</p>
             <button type="button" onClick={() => setIsFormOpen(true)} style={s.secondaryBtn}>
               + Créer un objectif
             </button>

@@ -1,11 +1,10 @@
 'use client';
 
 import React, { ReactNode } from 'react';
+import Image from 'next/image';
 
 type EmptyStateVariant = 'no-data' | 'no-results' | 'error' | 'success' | 'offline';
 type EmptyStateSize = 'sm' | 'md' | 'lg';
-type IconColor = 'primary' | 'success' | 'danger' | 'warning';
-
 interface EmptyStateProps {
     icon?: ReactNode;
     title: string;
@@ -199,7 +198,7 @@ export function CustomEmptyState({
     return (
         <div className={`empty-state empty-state-${size} ${className}`}>
             {illustration && (
-                <img src={illustration} alt="" className="empty-state-illustration" />
+                <Image src={illustration} alt="" width={200} height={200} className="empty-state-illustration" />
             )}
             {icon && <div className="empty-state-icon">{icon}</div>}
 

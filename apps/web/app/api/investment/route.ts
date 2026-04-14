@@ -45,7 +45,7 @@ export const POST = async (req: Request) => {
             simulatedBtc: btcAmount.toFixed(8),
             simulatedSatoshis: satoshis
         });
-    } catch (error) {
+    } catch {
         return Response.json({ error: 'Simulation failed' }, { status: 500 });
     }
 }

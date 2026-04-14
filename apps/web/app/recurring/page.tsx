@@ -40,7 +40,7 @@ const CATEGORY_OPTIONS = [
 function nextOccurrence(startDate: string, frequency: string): string {
   const start = new Date(startDate);
   const now = new Date();
-  let next = new Date(start);
+  const next = new Date(start);
 
   while (next <= now) {
     switch (frequency) {

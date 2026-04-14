@@ -65,7 +65,7 @@ export function InvestmentOpportunityCard({ balance }: { balance: number }) {
     <div style={styles.container}>
       <div style={styles.header}>
         <span style={styles.icon}>₿</span>
-        <h3 style={styles.title}>Opportunité d'Investissement</h3>
+        <h3 style={styles.title}>Opportunité d&apos;Investissement</h3>
       </div>
       
       {isLoading ? (

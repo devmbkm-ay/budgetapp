@@ -12,11 +12,7 @@ interface BudgetAlert {
   isRead: boolean;
 }
 
-interface BudgetAlertsProps {
-  userEmail?: string;
-}
-
-export function BudgetAlerts({ userEmail }: BudgetAlertsProps) {
+export function BudgetAlerts() {
   const [alerts, setAlerts] = useState<BudgetAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -57,8 +53,6 @@ export function BudgetAlerts({ userEmail }: BudgetAlertsProps) {
     }
   };
 
-  const criticalAlerts = alerts.filter(a => a.type === "critical");
-  const warningAlerts = alerts.filter(a => a.type === "warning");
   const displayedAlerts = showAll ? alerts : alerts.slice(0, 3);
   const hiddenCount = alerts.length - 3;
 

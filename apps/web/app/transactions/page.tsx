@@ -368,7 +368,7 @@ export default function TransactionsPage() {
               <div style={styles.aiContainer}>
                 <div style={styles.aiHeader}>
                   <span style={styles.aiSparkle}>✨</span>
-                  <h3 style={styles.aiTitle}>Conseils de l'IA</h3>
+                  <h3 style={styles.aiTitle}>Conseils de l&apos;IA</h3>
                 </div>
                 {isAiLoading ? (
                   <p style={styles.aiLoading}>Analyse de vos tendances en cours...</p>

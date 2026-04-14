@@ -53,7 +53,7 @@ export function AnomalyCard() {
         <div style={s.headerLeft}>
           <span style={s.radarIcon}>🔬</span>
           <div>
-            <div style={s.title}>Détection d'anomalies</div>
+            <div style={s.title}>Détection d&apos;anomalies</div>
             <div style={s.subtitle}>
               {alertCount > 0
                 ? `${alertCount} alerte${alertCount > 1 ? "s" : ""} critique${alertCount > 1 ? "s" : ""} · ${visible.length} signaux`

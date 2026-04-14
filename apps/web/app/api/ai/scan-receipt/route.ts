@@ -124,7 +124,7 @@ Retourne UNIQUEMENT le JSON.`;
           const parsed = JSON.parse(cleaned);
           return NextResponse.json({ ...parsed, method: "openai" });
         }
-      } catch (e) {
+      } catch {
         console.warn("[SCAN] OpenAI failed, trying Gemini...");
       }
     }
